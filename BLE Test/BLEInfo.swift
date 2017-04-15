@@ -14,7 +14,7 @@ import Foundation
 public struct BLEDescriptor {
     
     var title:String!
-    var UUID:NSUUID!
+    var UUID:Foundation.UUID!
     
 }
 
@@ -22,7 +22,7 @@ public struct BLEDescriptor {
 public struct BLECharacteristic {
     
     var title:String!
-    var UUID:NSUUID!
+    var UUID:Foundation.UUID!
     var descriptors:[BLEDescriptor]
     
 }
@@ -31,7 +31,7 @@ public struct BLECharacteristic {
 public struct BLEService {
     
     var title:String!
-    var UUID:NSUUID!
+    var UUID:Foundation.UUID!
     var characteristics:[BLECharacteristic]
     
 }

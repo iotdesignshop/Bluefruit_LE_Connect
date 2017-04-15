@@ -22,9 +22,9 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
     }
     
     
-    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject : AnyObject]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
-        window = UIWindow(frame: UIScreen.mainScreen().bounds)
+        window = UIWindow(frame: UIScreen.main.bounds)
         
         self.mainViewController = BLEMainViewController.sharedInstance
         
@@ -32,9 +32,9 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
         window!.makeKeyAndVisible()
         
         // Ask user for permision to show local notifications
-        if(UIApplication.instancesRespondToSelector(Selector("registerUserNotificationSettings:")))
+        if(UIApplication.instancesRespond(to: Selector("registerUserNotificationSettings:")))
         {
-            let settings = UIUserNotificationSettings(forTypes: [.Sound, .Alert, .Badge], categories: nil)
+            let settings = UIUserNotificationSettings(types: [.sound, .alert, .badge], categories: nil)
             application.registerUserNotificationSettings(settings)
         }
         else
@@ -46,16 +46,16 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
         var appDefaults = Dictionary<String, AnyObject>()
         appDefaults["updatescheck_preference"] = true;
         appDefaults["betareleases_preference"] = false;
-        NSUserDefaults.standardUserDefaults().registerDefaults(appDefaults)
-        NSUserDefaults.standardUserDefaults().synchronize()
+        UserDefaults.standard.register(defaults: appDefaults)
+        UserDefaults.standard.synchronize()
         
         if WCSession.isSupported() {
             print("creating WCSession …")
-            let session = WCSession.defaultSession()
+            let session = WCSession.default()
             session.delegate = self
-            session.activateSession()
+            session.activate()
             
-            if session.reachable == true {
+            if session.isReachable == true {
                 print("WCSession is reachable")
             }
             else {
@@ -68,7 +68,7 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
     }
     
     
-    func applicationWillResignActive(application: UIApplication) {
+    func applicationWillResignActive(_ application: UIApplication) {
         
         // Stop scanning before entering background
         mainViewController?.stopScan()
@@ -83,7 +83,7 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
     }
     
     
-    func applicationDidBecomeActive(application: UIApplication) {
+    func applicationDidBecomeActive(_ application: UIApplication) {
         
         mainViewController?.didBecomeActive()
     }
@@ -96,7 +96,7 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
     
     //WatchKit request
     
-    func session(session: WCSession, didReceiveMessage message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void) {
+    func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
         
         if let request = message["type"] as? String {
             if request == "isConnected" {
@@ -126,7 +126,7 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
             }
             else if request == "sendData"{
                 //check send data type - button or color
-                if let red = message["red"] as? Int, green = message["green"] as? Int, blue = message["blue"] as? Int {
+                if let red = message["red"] as? Int, green = message["green"] as? Int, let blue = message["blue"] as? Int {
                     //                        NSLog("color request received")
                     
                     //forward data to mainviewController
@@ -163,12 +163,12 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
         
     }
     
-    func application(application: UIApplication,
-        handleWatchKitExtensionRequest userInfo: [NSObject : AnyObject]?,
-        reply: (([NSObject : AnyObject]?) -> Void)) {
+    func application(_ application: UIApplication,
+        handleWatchKitExtensionRequest userInfo: [AnyHashable: Any]?,
+        reply: (@escaping ([AnyHashable: Any]?) -> Void)) {
             
             // 1
-            if let userInfo = userInfo, request = userInfo["type"] as? String {
+            if let userInfo = userInfo, let request = userInfo["type"] as? String {
                 if request == "isConnected" {
 //                    NSLog("app received connection status request")
                     
@@ -196,7 +196,7 @@ class BLEAppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
                 }
                 else if request == "sendData"{
                     //check send data type - button or color
-                    if let red = userInfo["red"] as? Int, green = userInfo["green"] as? Int, blue = userInfo["blue"] as? Int {
+                    if let red = userInfo["red"] as? Int, green = userInfo["green"] as? Int, let blue = userInfo["blue"] as? Int {
 //                        NSLog("color request received")
                         
                         //forward data to mainviewController

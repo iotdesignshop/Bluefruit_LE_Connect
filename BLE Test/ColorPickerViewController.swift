@@ -10,7 +10,7 @@ import UIKit
 
 protocol ColorPickerViewControllerDelegate: HelpViewControllerDelegate {
     
-    func sendColor(red:UInt8, green:UInt8, blue:UInt8)
+    func sendColor(_ red:UInt8, green:UInt8, blue:UInt8)
     
 }
 
@@ -19,7 +19,7 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
     var delegate:ColorPickerViewControllerDelegate!
     @IBOutlet var helpViewController:HelpViewController!
     @IBOutlet var infoButton:UIButton!
-    private var infoBarButton:UIBarButtonItem?
+    fileprivate var infoBarButton:UIBarButtonItem?
     var helpPopoverController:UIPopoverController?
     
 //    @IBOutlet var redSlider:UISlider!
@@ -56,7 +56,7 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
             nibName = "ColorPickerViewController_iPad"
         }
         
-        self.init(nibName: nibName as String, bundle: NSBundle.mainBundle())
+        self.init(nibName: nibName as String, bundle: Bundle.main)
         
         self.delegate = aDelegate
         self.title = "Color Picker"
@@ -72,26 +72,26 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
         self.helpViewController.delegate = delegate
         
         //add info bar button
-        let archivedData = NSKeyedArchiver.archivedDataWithRootObject(infoButton)
-        let buttonCopy = NSKeyedUnarchiver.unarchiveObjectWithData(archivedData) as! UIButton
-        buttonCopy.addTarget(self, action: Selector("showInfo:"), forControlEvents: UIControlEvents.TouchUpInside)
+        let archivedData = NSKeyedArchiver.archivedData(withRootObject: infoButton)
+        let buttonCopy = NSKeyedUnarchiver.unarchiveObject(with: archivedData) as! UIButton
+        buttonCopy.addTarget(self, action: Selector("showInfo:"), for: UIControlEvents.touchUpInside)
         infoBarButton = UIBarButtonItem(customView: buttonCopy)
         self.navigationItem.rightBarButtonItem = infoBarButton
         
         sendButton.layer.cornerRadius = 4.0
-        sendButton.layer.borderColor = sendButton.currentTitleColor.CGColor
+        sendButton.layer.borderColor = sendButton.currentTitleColor.cgColor
         sendButton.layer.borderWidth = 1.0;
         
-        wellView.backgroundColor = UIColor.whiteColor()
-        wellView.layer.borderColor = UIColor.blackColor().CGColor
+        wellView.backgroundColor = UIColor.white
+        wellView.layer.borderColor = UIColor.black.cgColor
         wellView.layer.borderWidth = 1.0
         
-        wheelView.backgroundColor = UIColor.clearColor()
+        wheelView.backgroundColor = UIColor.clear
         
         //customize brightness slider
         let sliderTrackImage = UIImage(named: "clearPixel.png")
-        brightnessSlider.setMinimumTrackImage(sliderTrackImage, forState: UIControlState.Normal)
-        brightnessSlider.setMaximumTrackImage(sliderTrackImage, forState: UIControlState.Normal)
+        brightnessSlider.setMinimumTrackImage(sliderTrackImage, for: UIControlState())
+        brightnessSlider.setMaximumTrackImage(sliderTrackImage, for: UIControlState())
         
         sliderGradientView.endColor = wellView.backgroundColor!
         
@@ -113,7 +113,7 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
     }
     
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
 
@@ -139,11 +139,11 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
             //                            wheelSize.width,
             //                            wheelSize.height)
             
-            let rect = CGRectMake(
-                0.0,
-                0.0,
-                wheelView.bounds.size.width,
-                wheelView.bounds.size.height)
+            let rect = CGRect(
+                x: 0.0,
+                y: 0.0,
+                width: wheelView.bounds.size.width,
+                height: wheelView.bounds.size.height)
             
             colorWheel = ISColorWheel(frame: rect)
             colorWheel.delegate = self
@@ -225,33 +225,33 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
 //    }
     
     
-    @IBAction func showInfo(sender:AnyObject) {
+    @IBAction func showInfo(_ sender:AnyObject) {
         
         // Show help info view on iPhone via flip transition, called via "i" button in navbar
         
         if (IS_IPHONE) {
-            presentViewController(helpViewController, animated: true, completion: nil)
+            present(helpViewController, animated: true, completion: nil)
         }
             
             //iPad
         else if (IS_IPAD) {
             
             //show popover if it isn't shown
-            helpPopoverController?.dismissPopoverAnimated(true)
+            helpPopoverController?.dismiss(animated: true)
             
             helpPopoverController = UIPopoverController(contentViewController: helpViewController)
-            helpPopoverController?.backgroundColor = UIColor.darkGrayColor()
+            helpPopoverController?.backgroundColor = UIColor.darkGray
             let rightBBI:UIBarButtonItem! = self.navigationController?.navigationBar.items?.last!.rightBarButtonItem
             let aFrame:CGRect = rightBBI!.customView!.frame
-            helpPopoverController?.presentPopoverFromRect(aFrame,
-                inView: rightBBI.customView!.superview!,
-                permittedArrowDirections: UIPopoverArrowDirection.Any,
+            helpPopoverController?.present(from: aFrame,
+                in: rightBBI.customView!.superview!,
+                permittedArrowDirections: UIPopoverArrowDirection.any,
                 animated: true)
         }
     }
     
     
-    @IBAction func brightnessSliderChanged(sender: UISlider) {
+    @IBAction func brightnessSliderChanged(_ sender: UISlider) {
         
         colorWheelDidChangeColor(colorWheel)
         
@@ -272,7 +272,7 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
     }
     
     
-    func colorWheelDidChangeColor(colorWheel:ISColorWheel) {
+    func colorWheelDidChangeColor(_ colorWheel:ISColorWheel) {
         
         let colorWheelColor = colorWheel.currentColor()
         
@@ -284,7 +284,7 @@ class ColorPickerViewController: UIViewController, UITextFieldDelegate, ISColorW
         var red:CGFloat = 0.0
         var green:CGFloat = 0.0
         var blue:CGFloat = 0.0
-        colorWheelColor.getRed(&red, green: &green, blue: &blue, alpha: nil)
+        colorWheelColor?.getRed(&red, green: &green, blue: &blue, alpha: nil)
         red *= brightness; green *= brightness; blue *= brightness
         let color = UIColor(red: red, green: green, blue: blue, alpha: 1.0)
         

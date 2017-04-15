@@ -11,16 +11,16 @@ import UIKit
 import CoreBluetooth
 
 //System Variables
-let CURRENT_DEVICE = UIDevice.currentDevice()
-let INTERFACE_IS_PAD:Bool = (CURRENT_DEVICE.userInterfaceIdiom == UIUserInterfaceIdiom.Pad)
-let INTERFACE_IS_PHONE:Bool = (CURRENT_DEVICE.userInterfaceIdiom == UIUserInterfaceIdiom.Phone)
+let CURRENT_DEVICE = UIDevice.current
+let INTERFACE_IS_PAD:Bool = (CURRENT_DEVICE.userInterfaceIdiom == UIUserInterfaceIdiom.pad)
+let INTERFACE_IS_PHONE:Bool = (CURRENT_DEVICE.userInterfaceIdiom == UIUserInterfaceIdiom.phone)
 
 let IS_IPAD:Bool = INTERFACE_IS_PAD
 let IS_IPHONE:Bool = INTERFACE_IS_PHONE
-let MAIN_SCREEN = UIScreen.mainScreen()
+let MAIN_SCREEN = UIScreen.main
 let IS_IPHONE_5:Bool = MAIN_SCREEN.bounds.size.height == 568.0
 let IS_IPHONE_4:Bool = MAIN_SCREEN.bounds.size.height == 480.0
-let IS_RETINA:Bool = MAIN_SCREEN.respondsToSelector("scale") && (MAIN_SCREEN.scale == 2.0)
+let IS_RETINA:Bool = MAIN_SCREEN.responds(to: "scale") && (MAIN_SCREEN.scale == 2.0)
 let IOS_VERSION_FLOAT:Float = (CURRENT_DEVICE.systemVersion as NSString).floatValue
 #if DEBUG
 let LOGGING = true
@@ -32,25 +32,21 @@ let cellSelectionColor = UIColor(red: 100.0/255.0, green: 182.0/255.0, blue: 255
 let bleBlueColor = UIColor(red: 24.0/255.0, green: 126.0/255.0, blue: 248.0/255.0, alpha: 1.0)
 
 
-func animateCellSelection(cell:UITableViewCell) {
+func animateCellSelection(_ cell:UITableViewCell) {
     
     //fade cell background blue to white
     cell.backgroundColor = cellSelectionColor
-    UIView.animateWithDuration(0.25, delay: 0.0, options: UIViewAnimationOptions.CurveEaseOut, animations: { () -> Void in
-        cell.backgroundColor = UIColor.whiteColor()
+    UIView.animate(withDuration: 0.25, delay: 0.0, options: UIViewAnimationOptions.curveEaseOut, animations: { () -> Void in
+        cell.backgroundColor = UIColor.white
         }) { (done:Bool) -> Void in
     }
 }
 
 
-func delay(delay:Double, closure:()->()) {
+func delay(_ delay:Double, closure:()->()) {
     
-    dispatch_after(
-        dispatch_time(
-            DISPATCH_TIME_NOW,
-            Int64(delay * Double(NSEC_PER_SEC))
-        ),
-        dispatch_get_main_queue(), closure
+    DispatchQueue.main.asyncAfter(
+        deadline: DispatchTime.now() + Double(Int64(delay * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC), execute: closure
     )
 }
 
@@ -60,22 +56,22 @@ func delay(delay:Double, closure:()->()) {
 func uartShouldEchoLocal() ->Bool {
     
     // Pref was not set
-    if NSUserDefaults.standardUserDefaults().valueForKey(PREF_UART_SHOULD_ECHO_LOCAL) == nil {
+    if UserDefaults.standard.value(forKey: PREF_UART_SHOULD_ECHO_LOCAL) == nil {
         uartShouldEchoLocalSet(false)
         return false
     }
         
     // Pref was set
     else {
-        return NSUserDefaults.standardUserDefaults().boolForKey(PREF_UART_SHOULD_ECHO_LOCAL)
+        return UserDefaults.standard.bool(forKey: PREF_UART_SHOULD_ECHO_LOCAL)
     }
     
 }
 
 
-func uartShouldEchoLocalSet(shouldEcho:Bool) {
+func uartShouldEchoLocalSet(_ shouldEcho:Bool) {
     
-    NSUserDefaults.standardUserDefaults().setBool(shouldEcho, forKey: PREF_UART_SHOULD_ECHO_LOCAL)
+    UserDefaults.standard.set(shouldEcho, forKey: PREF_UART_SHOULD_ECHO_LOCAL)
     
 }
 
@@ -254,7 +250,7 @@ func dfuVersionCharacteritsicUUID() ->CBUUID {
 //]
 
 
-func UUIDsAreEqual(firstID:CBUUID, secondID:CBUUID)->Bool {
+func UUIDsAreEqual(_ firstID:CBUUID, secondID:CBUUID)->Bool {
     
     if firstID.representativeString() == secondID.representativeString() {
         return true

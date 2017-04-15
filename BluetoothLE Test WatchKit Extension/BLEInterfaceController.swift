@@ -16,24 +16,24 @@ class BLEInterfaceController: WKInterfaceController {
     @IBOutlet weak var controllerModeGroup: WKInterfaceGroup?
     @IBOutlet weak var debugLabel: WKInterfaceLabel?
     
-    override func awakeWithContext(context: AnyObject?) {
-        super.awakeWithContext(context)
+    override func awake(withContext context: Any?) {
+        super.awake(withContext: context)
         
-        self.addMenuItemWithItemIcon(WKMenuItemIcon.Decline, title: "Disconnect", action: Selector("disconnectButtonTapped"))
+        self.addMenuItem(with: WKMenuItemIcon.decline, title: "Disconnect", action: #selector(BLEInterfaceController.disconnectButtonTapped))
         
     }
     
     
     func disconnectButtonTapped() {
         
-        sendRequest(["type":"command", "command":"disconnect"])
+        sendRequest(message: ["type":"command" as AnyObject, "command":"disconnect" as AnyObject])
         
     }
 
     
     func sendRequest(message:[String:AnyObject]){
         
-        BLESessionManager.sharedInstance.sendRequest(message, sender: self)
+        BLESessionManager.sharedInstance.sendRequest(message: message, sender: self)
         
     }
     
@@ -51,7 +51,7 @@ class BLEInterfaceController: WKInterfaceController {
         self.noConnectionLabel?.setHidden(false)
         self.controllerModeGroup?.setHidden(true)
         
-        WKInterfaceController.reloadRootControllersWithNames(["Root"], contexts: nil)
+        WKInterfaceController.reloadRootControllers(withNames: ["Root"], contexts: nil)
         
     }
     

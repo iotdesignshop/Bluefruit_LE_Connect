@@ -12,41 +12,41 @@ import Moscapsule
 protocol MqttManagerDelegate : class {
     func onMqttConnected()
     func onMqttDisconnected()
-    func onMqttMessageReceived(message : String, topic: String)
-    func onMqttError(message : String)
+    func onMqttMessageReceived(_ message : String, topic: String)
+    func onMqttError(_ message : String)
 }
 
 class MqttManager
 {
     enum ConnectionStatus {
-        case Connecting
-        case Connected
-        case Disconnecting
-        case Disconnected
-        case Error
-        case None
+        case connecting
+        case connected
+        case disconnecting
+        case disconnected
+        case error
+        case none
     }
     
     enum MqttQos : Int  {
-        case AtMostOnce = 0
-        case AtLeastOnce = 1
-        case ExactlyOnce = 2
+        case atMostOnce = 0
+        case atLeastOnce = 1
+        case exactlyOnce = 2
     }
     
     // Singleton
     static let sharedInstance = MqttManager()
     
     // Constants
-    private static let defaultKeepAliveInterval : Int32 = 60;
+    fileprivate static let defaultKeepAliveInterval : Int32 = 60;
     
     // Data
     weak var delegate : MqttManagerDelegate?
-    var status = ConnectionStatus.None
+    var status = ConnectionStatus.none
 
-    private var mqttClient : MQTTClient?
+    fileprivate var mqttClient : MQTTClient?
     
     //
-    private init() {
+    fileprivate init() {
         
     }
     
@@ -62,9 +62,9 @@ class MqttManager
         }
     }
     
-    func connect(host: String, port: Int, username: String?, password: String?, cleanSession: Bool) {
+    func connect(_ host: String, port: Int, username: String?, password: String?, cleanSession: Bool) {
         // Configure MQTT connection
-        let clientId = "Bluefruit_" + NSUUID().UUIDString
+        let clientId = "Bluefruit_" + UUID().uuidString
         let mqttConfig = MQTTConfig(clientId: clientId, host: host, port: Int32(port), keepAlive: MqttManager.defaultKeepAliveInterval)
         mqttConfig.cleanSession = cleanSession
         
@@ -73,12 +73,12 @@ class MqttManager
         }
 
         mqttConfig.onConnectCallback = { [ weak delegate = self.delegate,  unowned self /*, weak mqttClient = self.mqttClient*/ ] returnCode  in
-            printLog("", funcName: (__FUNCTION__), logString: "MQTT connectedCallback \(returnCode.description)")
+            printLog("", funcName: (#function), logString: "MQTT connectedCallback \(returnCode.description)")
 
-            self.status = returnCode == .Success ? ConnectionStatus.Connected : ConnectionStatus.Error
+            self.status = returnCode == .success ? ConnectionStatus.connected : ConnectionStatus.error
             let mqttSettings = MqttSettings.sharedInstance
             
-            if (returnCode == .Success) {
+            if (returnCode == .success) {
                 delegate?.onMqttConnected()
                 
                 let topic = mqttSettings.subscribeTopic
@@ -97,51 +97,51 @@ class MqttManager
         }
 
         mqttConfig.onDisconnectCallback = { [weak delegate = self.delegate] reasonCode  in
-            printLog("", funcName: (__FUNCTION__), logString: "MQTT onDisconnectCallback")
+            printLog("", funcName: (#function), logString: "MQTT onDisconnectCallback")
 
-            self.status = reasonCode == .Disconnect_Requested ? .Disconnected : .Error
+            self.status = reasonCode == .disconnect_Requested ? .disconnected : .error
             delegate?.onMqttDisconnected()
         }
 
         mqttConfig.onPublishCallback = { messageId in
-            printLog("", funcName: (__FUNCTION__), logString: "published (mid=\(messageId))")
+            printLog("", funcName: (#function), logString: "published (mid=\(messageId))")
         }
         
         mqttConfig.onMessageCallback = { [weak delegate = self.delegate] mqttMessage in
-            let payload = NSString(data: mqttMessage.payload, encoding: NSUTF8StringEncoding) as! String
-            printLog("", funcName: (__FUNCTION__), logString: "MQTT Message received: payload=\(payload)")
+            let payload = NSString(data: mqttMessage.payload, encoding: String.Encoding.utf8.rawValue) as! String
+            printLog("", funcName: (#function), logString: "MQTT Message received: payload=\(payload)")
 
             delegate?.onMqttMessageReceived(payload, topic: mqttMessage.topic)
         }
         
         // create new MQTT Connection
-        printLog(self, funcName: (__FUNCTION__), logString: "MQTT connect")
+        printLog(self, funcName: (#function), logString: "MQTT connect")
         MqttSettings.sharedInstance.isConnected = true
-        status = ConnectionStatus.Connecting
+        status = ConnectionStatus.connecting
         mqttClient = MQTT.newConnection(mqttConfig)
     }
 
-    func subscribe(topic: String, qos: MqttQos) {
+    func subscribe(_ topic: String, qos: MqttQos) {
         if let client = mqttClient {
              client.subscribe(topic, qos: Int32(qos.rawValue))
         }
     }
     
-    func unsubscribe(topic: String) {
+    func unsubscribe(_ topic: String) {
         mqttClient?.unsubscribe(topic)
     }
     
-    func publish(message: String, topic: String, qos: MqttQos) {
+    func publish(_ message: String, topic: String, qos: MqttQos) {
         mqttClient?.publishString(message, topic: topic, qos: Int32(qos.rawValue), retain: false)
     }
     
     func disconnect() {
         if let client = mqttClient {
-            status = .Disconnecting
+            status = .disconnecting
             client.disconnect()
         }
         else {
-            status = .Disconnected
+            status = .disconnected
         }
         
     }

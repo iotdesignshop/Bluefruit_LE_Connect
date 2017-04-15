@@ -17,7 +17,7 @@ class MqttSettingsEditValueCell: UITableViewCell {
     func reset() {
         valueTextField?.text = nil
         valueTextField?.placeholder = nil
-        valueTextField?.keyboardType = UIKeyboardType.Default;
+        valueTextField?.keyboardType = UIKeyboardType.default;
         typeTextField?.text = nil
         typeTextField?.inputView = nil
         typeTextField?.inputAccessoryView = nil

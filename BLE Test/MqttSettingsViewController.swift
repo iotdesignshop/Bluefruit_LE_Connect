@@ -11,7 +11,7 @@ import UIKit
 
 class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate, UIPickerViewDelegate, UIPickerViewDataSource, MqttManagerDelegate {
     // Constants
-    private static let defaultHeaderCellHeight : CGFloat = 50;
+    fileprivate static let defaultHeaderCellHeight : CGFloat = 50;
     
     // UI
     @IBOutlet weak var baseTableView: UITableView!
@@ -19,22 +19,22 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
     @IBOutlet var pickerToolbar: UIToolbar!
     
     // Data
-    private enum SettingsSections : Int {
-        case Status = 0
-        case Server = 1
-        case Publish = 2
-        case Subscribe = 3
-        case Advanced = 4
+    fileprivate enum SettingsSections : Int {
+        case status = 0
+        case server = 1
+        case publish = 2
+        case subscribe = 3
+        case advanced = 4
     }
     
-    private enum PickerViewType {
-        case Qos
-        case Action
+    fileprivate enum PickerViewType {
+        case qos
+        case action
     }
     
-    private var selectedIndexPath = NSIndexPath(forRow: 0, inSection: 0)
-    private var pickerViewType = PickerViewType.Qos
-    private var previousSubscriptionTopic : String?
+    fileprivate var selectedIndexPath = IndexPath(row: 0, section: 0)
+    fileprivate var pickerViewType = PickerViewType.qos
+    fileprivate var previousSubscriptionTopic : String?
     
     //
     override func viewDidLoad() {
@@ -43,25 +43,25 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         self.title = "MQTT Settings"
         
         // Register custom cell nibs
-        baseTableView.registerNib(UINib(nibName: "MqttSettingsHeaderCell", bundle: nil), forCellReuseIdentifier: "HeaderCell")
-        baseTableView.registerNib(UINib(nibName: "MqttSettingsStatusCell", bundle: nil), forCellReuseIdentifier: "StatusCell")
-        baseTableView.registerNib(UINib(nibName: "MqttSettingsEditValueCell", bundle: nil), forCellReuseIdentifier: "EditValueCell")
-        baseTableView.registerNib(UINib(nibName: "MqttSettingsEditValuePickerCell", bundle: nil), forCellReuseIdentifier: "EditValuePickerCell")
-        baseTableView.registerNib(UINib(nibName: "MqttSettingsEditPickerCell", bundle: nil), forCellReuseIdentifier: "EditPickerCell")
+        baseTableView.register(UINib(nibName: "MqttSettingsHeaderCell", bundle: nil), forCellReuseIdentifier: "HeaderCell")
+        baseTableView.register(UINib(nibName: "MqttSettingsStatusCell", bundle: nil), forCellReuseIdentifier: "StatusCell")
+        baseTableView.register(UINib(nibName: "MqttSettingsEditValueCell", bundle: nil), forCellReuseIdentifier: "EditValueCell")
+        baseTableView.register(UINib(nibName: "MqttSettingsEditValuePickerCell", bundle: nil), forCellReuseIdentifier: "EditValuePickerCell")
+        baseTableView.register(UINib(nibName: "MqttSettingsEditPickerCell", bundle: nil), forCellReuseIdentifier: "EditPickerCell")
         
         // Note: baseTableView is grouped to make the section titles no to overlap the section rows
-        baseTableView.backgroundColor = UIColor.clearColor()
+        baseTableView.backgroundColor = UIColor.clear
         
         previousSubscriptionTopic = MqttSettings.sharedInstance.subscribeTopic
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         MqttManager.sharedInstance.delegate = self
     }
 
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         if (IS_IPAD) {
@@ -73,19 +73,19 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         super.didReceiveMemoryWarning()
     }
     
-    func headerTitleForSection(section: Int) -> String? {
+    func headerTitleForSection(_ section: Int) -> String? {
         switch(section) {
-        case SettingsSections.Status.rawValue: return nil
-        case SettingsSections.Server.rawValue: return "Server"
-        case SettingsSections.Publish.rawValue: return "Publish"
-        case SettingsSections.Subscribe.rawValue: return "Subscribe"
-        case SettingsSections.Advanced.rawValue: return "Advanced"
+        case SettingsSections.status.rawValue: return nil
+        case SettingsSections.server.rawValue: return "Server"
+        case SettingsSections.publish.rawValue: return "Publish"
+        case SettingsSections.subscribe.rawValue: return "Subscribe"
+        case SettingsSections.advanced.rawValue: return "Advanced"
         default: return nil
         }
     }
 
-    func subscriptionTopicChanged(newTopic: String?, qos: MqttManager.MqttQos) {
-        printLog(self, funcName: (__FUNCTION__), logString: "subscription changed from: \(previousSubscriptionTopic) to: \(newTopic)");
+    func subscriptionTopicChanged(_ newTopic: String?, qos: MqttManager.MqttQos) {
+        printLog(self, funcName: (#function), logString: "subscription changed from: \(previousSubscriptionTopic) to: \(newTopic)");
         
         let mqttManager = MqttManager.sharedInstance
         if (previousSubscriptionTopic != nil) {
@@ -97,65 +97,65 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         previousSubscriptionTopic = newTopic
     }
     
-    func indexPathFromTag(tag: Int) -> NSIndexPath {
+    func indexPathFromTag(_ tag: Int) -> IndexPath {
         // To help identify each textfield a tag is added with this format: 12 (1 is the section, 2 is the row)
-        return NSIndexPath(forRow: tag % 10, inSection: tag / 10)
+        return IndexPath(row: tag % 10, section: tag / 10)
     }
     
-    func tagFromIndexPath(indexPath : NSIndexPath) -> Int {
+    func tagFromIndexPath(_ indexPath : IndexPath) -> Int {
         // To help identify each textfield a tag is added with this format: 12 (1 is the section, 2 is the row)
         return indexPath.section * 10 + indexPath.row
     }
     
     // MARK: - UITableViewDelegate
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return SettingsSections.Advanced.rawValue + 1
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return SettingsSections.advanced.rawValue + 1
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch(section) {
-        case SettingsSections.Status.rawValue: return 1
-        case SettingsSections.Server.rawValue: return 2
-        case SettingsSections.Publish.rawValue: return 2
-        case SettingsSections.Subscribe.rawValue: return 2
-        case SettingsSections.Advanced.rawValue: return 2
+        case SettingsSections.status.rawValue: return 1
+        case SettingsSections.server.rawValue: return 2
+        case SettingsSections.publish.rawValue: return 2
+        case SettingsSections.subscribe.rawValue: return 2
+        case SettingsSections.advanced.rawValue: return 2
         default: return 0
         }
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         let section = indexPath.section
         let row = indexPath.row;
         
         let cell : UITableViewCell
         
-        if(section == SettingsSections.Status.rawValue) {
+        if(section == SettingsSections.status.rawValue) {
             
-            let statusCell = tableView.dequeueReusableCellWithIdentifier("StatusCell", forIndexPath: indexPath) as! MqttSettingsStatusCell
+            let statusCell = tableView.dequeueReusableCell(withIdentifier: "StatusCell", for: indexPath) as! MqttSettingsStatusCell
             
             let status = MqttManager.sharedInstance.status
-            let showWait = status == .Connecting || status == .Disconnecting
+            let showWait = status == .connecting || status == .disconnecting
             if (showWait) {
                 statusCell.waitView.startAnimating()
             }else {
                 statusCell.waitView.stopAnimating()
             }
-            statusCell.actionButton.hidden = showWait
+            statusCell.actionButton.isHidden = showWait
             
             let statusText : String;
             switch(status) {
-            case .Connected: statusText = "Connected"
-            case .Connecting: statusText = "Connecting..."
-            case .Disconnecting: statusText = "Disconnecting..."
-            case .Error: statusText = "Error"
+            case .connected: statusText = "Connected"
+            case .connecting: statusText = "Connecting..."
+            case .disconnecting: statusText = "Disconnecting..."
+            case .error: statusText = "Error"
             default: statusText = "Disconnected"
             }
             
             statusCell.statusLabel.text = statusText
             
             UIView.performWithoutAnimation({ () -> Void in      // Change title disabling animations (if enabled the user can see the old title for a moment)
-                statusCell.actionButton.setTitle(status == .Connected ?"Disconnect":"Connect", forState: UIControlState.Normal)
+                statusCell.actionButton.setTitle(status == .connected ?"Disconnect":"Connect", for: UIControlState())
                 statusCell.layoutIfNeeded()
             })
 
@@ -168,7 +168,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                 // Connect / Disconnect
                 let mqttManager = MqttManager.sharedInstance
                 let status = mqttManager.status
-                if (status == .Disconnected || status == .None || status == .Error) {
+                if (status == .disconnected || status == .none || status == .error) {
                     mqttManager.connectFromSavedSettings()
                 } else {
                     mqttManager.disconnect()
@@ -185,8 +185,8 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
             let editValueCell : MqttSettingsEditValueCell
             
             switch(section) {
-            case SettingsSections.Server.rawValue:
-                editValueCell = tableView.dequeueReusableCellWithIdentifier("EditValueCell", forIndexPath: indexPath) as! MqttSettingsEditValueCell
+            case SettingsSections.server.rawValue:
+                editValueCell = tableView.dequeueReusableCell(withIdentifier: "EditValueCell", for: indexPath) as! MqttSettingsEditValueCell
                 editValueCell.reset()
                 
                 let labels = ["Address:", "Port:"]
@@ -200,11 +200,11 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                     if (mqttSettings.serverPort != MqttSettings.defaultServerPort) {
                         valueTextField.text = "\(mqttSettings.serverPort)"
                     }
-                    valueTextField.keyboardType = UIKeyboardType.NumberPad;
+                    valueTextField.keyboardType = UIKeyboardType.numberPad;
                 }
 
-            case SettingsSections.Publish.rawValue:
-                editValueCell = tableView.dequeueReusableCellWithIdentifier("EditValuePickerCell", forIndexPath: indexPath) as! MqttSettingsEditValueCell
+            case SettingsSections.publish.rawValue:
+                editValueCell = tableView.dequeueReusableCell(withIdentifier: "EditValuePickerCell", for: indexPath) as! MqttSettingsEditValueCell
                 editValueCell.reset()
 
                 let labels = ["UART RX:", "UART TX:"]
@@ -217,8 +217,8 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                 typeTextField.text = titleForQos(mqttSettings.getPublishQos(row))
                 setupTextFieldForPickerInput(typeTextField, indexPath: indexPath)
                 
-            case SettingsSections.Subscribe.rawValue:
-                editValueCell = tableView.dequeueReusableCellWithIdentifier(row==0 ? "EditValuePickerCell":"EditPickerCell", forIndexPath: indexPath) as! MqttSettingsEditValueCell
+            case SettingsSections.subscribe.rawValue:
+                editValueCell = tableView.dequeueReusableCell(withIdentifier: row==0 ? "EditValuePickerCell":"EditPickerCell", for: indexPath) as! MqttSettingsEditValueCell
                 editValueCell.reset()
                 
                 let labels = ["Topic:", "Action:"]
@@ -237,8 +237,8 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                     setupTextFieldForPickerInput(typeTextField, indexPath: indexPath)
                 }
 
-            case SettingsSections.Advanced.rawValue:
-                editValueCell = tableView.dequeueReusableCellWithIdentifier("EditValueCell", forIndexPath: indexPath) as! MqttSettingsEditValueCell
+            case SettingsSections.advanced.rawValue:
+                editValueCell = tableView.dequeueReusableCell(withIdentifier: "EditValueCell", for: indexPath) as! MqttSettingsEditValueCell
                 editValueCell.reset()
 
                 let labels = ["Username:", "Password:"]
@@ -253,14 +253,14 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                 }
 
             default:
-                editValueCell = tableView.dequeueReusableCellWithIdentifier("EditValueCell", forIndexPath: indexPath) as! MqttSettingsEditValueCell
+                editValueCell = tableView.dequeueReusableCell(withIdentifier: "EditValueCell", for: indexPath) as! MqttSettingsEditValueCell
                 editValueCell.reset()
                 
                 break;
             }
 
             if let valueTextField = editValueCell.valueTextField {
-                valueTextField.returnKeyType = UIReturnKeyType.Next
+                valueTextField.returnKeyType = UIReturnKeyType.next
                 valueTextField.delegate = self;
                 valueTextField.tag = tagFromIndexPath(indexPath)
             }
@@ -271,52 +271,52 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         return cell
     }
     
-    func setupTextFieldForPickerInput(textField : UITextField, indexPath : NSIndexPath) {
+    func setupTextFieldForPickerInput(_ textField : UITextField, indexPath : IndexPath) {
         textField.inputView = pickerView
         textField.inputAccessoryView = pickerToolbar
         textField.delegate = self
         textField.tag = tagFromIndexPath(indexPath);
         textField.textColor = self.view.tintColor
-        textField.tintColor = UIColor.clearColor()  // remove caret
+        textField.tintColor = UIColor.clear  // remove caret
     }
     
-    func titleForSubscribeBehaviour(behaviour: MqttSettings.SubscribeBehaviour) -> String {
+    func titleForSubscribeBehaviour(_ behaviour: MqttSettings.SubscribeBehaviour) -> String {
         switch(behaviour) {
-        case .LocalOnly: return "Local Only"
-        case .Transmit: return "Transmit"
+        case .localOnly: return "Local Only"
+        case .transmit: return "Transmit"
         }
     }
     
-    func titleForQos(qos: MqttManager.MqttQos) -> String {
+    func titleForQos(_ qos: MqttManager.MqttQos) -> String {
         switch(qos) {
-        case .AtLeastOnce : return "At Least Once"
-        case .AtMostOnce : return "At Most Once"
-        case .ExactlyOnce : return "Exactly Once"
+        case .atLeastOnce : return "At Least Once"
+        case .atMostOnce : return "At Most Once"
+        case .exactlyOnce : return "Exactly Once"
         }
     }
     
-    func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
-            cell.backgroundColor = UIColor.clearColor()
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+            cell.backgroundColor = UIColor.clear
     }
 
     // MARK: UITableViewDataSource
     
-    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let headerCell = tableView.dequeueReusableCellWithIdentifier("HeaderCell") as! MqttSettingsHeaderCell
-        headerCell.backgroundColor = UIColor.clearColor()
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let headerCell = tableView.dequeueReusableCell(withIdentifier: "HeaderCell") as! MqttSettingsHeaderCell
+        headerCell.backgroundColor = UIColor.clear
         headerCell.nameLabel.text = headerTitleForSection(section)
-        let hasSwitch = section == SettingsSections.Publish.rawValue || section == SettingsSections.Subscribe.rawValue;
-        headerCell.isOnSwitch.hidden = !hasSwitch;
+        let hasSwitch = section == SettingsSections.publish.rawValue || section == SettingsSections.subscribe.rawValue;
+        headerCell.isOnSwitch.isHidden = !hasSwitch;
         if (hasSwitch) {
             let mqttSettings = MqttSettings.sharedInstance;
-            if (section == SettingsSections.Publish.rawValue) {
-                headerCell.isOnSwitch.on = mqttSettings.isPublishEnabled
+            if (section == SettingsSections.publish.rawValue) {
+                headerCell.isOnSwitch.isOn = mqttSettings.isPublishEnabled
                 headerCell.isOnChanged = { isOn in
                     mqttSettings.isPublishEnabled = isOn;
                 }
             }
-            else if (section == SettingsSections.Subscribe.rawValue) {
-                headerCell.isOnSwitch.on = mqttSettings.isSubscribeEnabled
+            else if (section == SettingsSections.subscribe.rawValue) {
+                headerCell.isOnSwitch.isOn = mqttSettings.isSubscribeEnabled
                 headerCell.isOnChanged = { [unowned self] isOn in
                     mqttSettings.isSubscribeEnabled = isOn;
                     self.subscriptionTopicChanged(nil, qos: mqttSettings.subscribeQos)
@@ -327,7 +327,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         return headerCell;
     }
 
-    func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         if (headerTitleForSection(section) == nil) {
             UITableViewAutomaticDimension
             return 0.5;       // no title, so 0 height (hack: set to 0.5 because 0 height is not correctly displayed)
@@ -337,19 +337,19 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         }
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         // Focus on textfield if present
-        if let editValueCell = tableView.cellForRowAtIndexPath(indexPath) as? MqttSettingsEditValueCell {
+        if let editValueCell = tableView.cellForRow(at: indexPath) as? MqttSettingsEditValueCell {
             editValueCell.valueTextField?.becomeFirstResponder()
         }
     }
 
     // MARK: - UITextFieldDelegate
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         
         // Go to next textField
-        if (textField.returnKeyType == UIReturnKeyType.Next) {
+        if (textField.returnKeyType == UIReturnKeyType.next) {
             let tag = textField.tag;
             var nextView = baseTableView.viewWithTag(tag+1)
             if (nextView == nil || nextView!.inputView != nil) {
@@ -359,7 +359,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                 next.becomeFirstResponder()
                 
                 // Scroll to show it
-                baseTableView.scrollToRowAtIndexPath(indexPathFromTag(next.tag), atScrollPosition: .Middle, animated: true)
+                baseTableView.scrollToRow(at: indexPathFromTag(next.tag), at: .middle, animated: true)
             }
             else {
                 textField.resignFirstResponder()
@@ -369,15 +369,15 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         return true;
     }
     
-    func textFieldShouldBeginEditing(textField: UITextField) -> Bool {
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         // Update selected indexpath
         selectedIndexPath = indexPathFromTag(textField.tag)
         
         // Setup inputView if needed
         if (textField.inputView != nil) {
             // Setup valueTextField
-            let isAction = selectedIndexPath.section ==  SettingsSections.Subscribe.rawValue && selectedIndexPath.row == 1
-            pickerViewType = isAction ? PickerViewType.Action:PickerViewType.Qos
+            let isAction = selectedIndexPath.section ==  SettingsSections.subscribe.rawValue && selectedIndexPath.row == 1
+            pickerViewType = isAction ? PickerViewType.action:PickerViewType.qos
             pickerView .reloadAllComponents()
             pickerView.tag = textField.tag      // pass the current textfield tag to the pickerView
             //pickerView.selectRow(<#row: Int#>, inComponent: 0, animated: false)
@@ -386,7 +386,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         return true;
     }
     
-    func textFieldDidEndEditing(textField: UITextField) {
+    func textFieldDidEndEditing(_ textField: UITextField) {
         if (textField.inputView == nil) {       // textfields with input view are not managed here
             let indexPath = indexPathFromTag(textField.tag)
             let section = indexPath.section
@@ -395,7 +395,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
             
             // Update settings with new values
             switch(section) {
-            case SettingsSections.Server.rawValue:
+            case SettingsSections.server.rawValue:
                 if (row == 0) {         // Server Address
                     mqttSettings.serverAddress = textField.text
                 }
@@ -409,15 +409,15 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
                     }
                 }
                 
-            case SettingsSections.Publish.rawValue:
+            case SettingsSections.publish.rawValue:
                 mqttSettings.setPublishTopic(row, topic: textField.text)
                 
-            case SettingsSections.Subscribe.rawValue:
+            case SettingsSections.subscribe.rawValue:
                 let topic = textField.text
                 mqttSettings.subscribeTopic = topic
                 subscriptionTopicChanged(topic, qos: mqttSettings.subscribeQos)
                 
-            case SettingsSections.Advanced.rawValue:
+            case SettingsSections.advanced.rawValue:
                 if (row == 0) {            // Username
                     mqttSettings.username = textField.text;
                 }
@@ -432,7 +432,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
     }
 
      // MARK: - KeyboardAwareViewController
-    override func keyboardPositionChanged(keyboardFrame : CGRect, keyboardShown : Bool) {
+    override func keyboardPositionChanged(_ keyboardFrame : CGRect, keyboardShown : Bool) {
         super.keyboardPositionChanged(keyboardFrame, keyboardShown:keyboardShown )
         
         if (IS_IPHONE) {
@@ -442,14 +442,14 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
         
         //printLog(self, (__FUNCTION__), "keyboard size: \(height) appearing: \(keyboardShown)");
         if (keyboardShown) {
-            baseTableView.scrollToRowAtIndexPath(selectedIndexPath, atScrollPosition: .Middle, animated: true)
+            baseTableView.scrollToRow(at: selectedIndexPath, at: .middle, animated: true)
         }
     }
     
     // MARK: - Input Toolbar
     
-    @IBAction func onClickInputToolbarDone(sender: AnyObject) {
-        let selectedPickerRow = pickerView.selectedRowInComponent(0);
+    @IBAction func onClickInputToolbarDone(_ sender: AnyObject) {
+        let selectedPickerRow = pickerView.selectedRow(inComponent: 0);
         
         let indexPath = indexPathFromTag(pickerView.tag)
         let section = indexPath.section
@@ -458,10 +458,10 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
 
         // Update settings with new values
         switch(section) {
-        case SettingsSections.Publish.rawValue:
+        case SettingsSections.publish.rawValue:
             mqttSettings.setPublishQos(row, qos: MqttManager.MqttQos(rawValue: selectedPickerRow)!)
 
-        case SettingsSections.Subscribe.rawValue:
+        case SettingsSections.subscribe.rawValue:
             if (row == 0) {     // Topic Qos
                 let qos = MqttManager.MqttQos(rawValue: selectedPickerRow)!
                 mqttSettings.subscribeQos =  qos
@@ -482,22 +482,22 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
     
     // MARK: - UIPickerViewDataSource
 
-    func numberOfComponentsInPickerView(pickerView: UIPickerView) -> Int {
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
         return 1
     }
     
-    func pickerView(pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return pickerViewType == .Action ? 2:3
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return pickerViewType == .action ? 2:3
     }
 
-    func pickerView(pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String?
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String?
     {
 //        let labels : [String];
 
         switch(pickerViewType) {
-        case .Qos:
+        case .qos:
             return titleForQos(MqttManager.MqttQos(rawValue: row)!)
-        case .Action:
+        case .action:
             return titleForSubscribeBehaviour(MqttSettings.SubscribeBehaviour(rawValue: row)!)
         }
         
@@ -506,7 +506,7 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
     
     // MARK: UIPickerViewDelegate
     
-    func pickerView(pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         
     }
     
@@ -514,27 +514,27 @@ class MqttSettingsViewController: KeyboardAwareViewController, UITableViewDelega
     
     func onMqttConnected() {
         // Update status
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
+        DispatchQueue.main.async(execute: { [unowned self] in
             self.baseTableView.reloadData()
             })
     }
    
     func onMqttDisconnected() {
         // Update status
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
+        DispatchQueue.main.async(execute: { [unowned self] in
             self.baseTableView.reloadData()
             })
 
     }
     
-    func onMqttMessageReceived(message : String, topic: String) {
+    func onMqttMessageReceived(_ message : String, topic: String) {
     }
     
-    func onMqttError(message : String) {
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
-            let alert = UIAlertController(title:"Error", message: message, preferredStyle: UIAlertControllerStyle.Alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
-            self.presentViewController(alert, animated: true, completion: nil)
+    func onMqttError(_ message : String) {
+        DispatchQueue.main.async(execute: { [unowned self] in
+            let alert = UIAlertController(title:"Error", message: message, preferredStyle: UIAlertControllerStyle.alert)
+            alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
             
             // Update status
             self.baseTableView.reloadData()

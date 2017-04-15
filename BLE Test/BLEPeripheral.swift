@@ -14,9 +14,9 @@ import CoreBluetooth
 protocol BLEPeripheralDelegate: Any {
     
     var connectionMode:ConnectionMode { get }
-    func didReceiveData(newData:NSData)
+    func didReceiveData(_ newData:Data)
     func connectionFinalized()
-    func uartDidEncounterError(error:NSString)
+    func uartDidEncounterError(_ error:NSString)
     
 }
 
@@ -41,7 +41,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func didConnect(withMode:ConnectionMode) {
+    func didConnect(_ withMode:ConnectionMode) {
         
         //Respond to peripheral connection
         
@@ -55,12 +55,12 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
         printLog(self, funcName: "didConnect", logString: "Starting service discovery")
         
         switch withMode.rawValue {
-        case ConnectionMode.UART.rawValue,
-             ConnectionMode.PinIO.rawValue,
-             ConnectionMode.Controller.rawValue,
-            ConnectionMode.DFU.rawValue:
+        case ConnectionMode.uart.rawValue,
+             ConnectionMode.pinIO.rawValue,
+             ConnectionMode.controller.rawValue,
+            ConnectionMode.dfu.rawValue:
             currentPeripheral.discoverServices([uartServiceUUID(), dfuServiceUUID(), deviceInformationServiceUUID()])       // Discover dfu and dis (needed to check if update is available)
-        case ConnectionMode.Info.rawValue:
+        case ConnectionMode.info.rawValue:
             currentPeripheral.discoverServices(nil)
             break
         default:
@@ -74,17 +74,17 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func writeString(string:NSString){
+    func writeString(_ string:NSString){
         
         //Send string to peripheral
         
-        let data = NSData(bytes: string.UTF8String, length: string.length)
+        let data = Data(bytes: UnsafePointer<UInt8>(string.utf8String), count: string.length)
         
         writeRawData(data)
     }
     
     
-    func writeRawData(data:NSData) {
+    func writeRawData(_ data:Data) {
         
         //Send data to peripheral
         
@@ -95,15 +95,15 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
         
         var writeType:CBCharacteristicWriteType
         
-        if (txCharacteristic!.properties.rawValue & CBCharacteristicProperties.WriteWithoutResponse.rawValue) != 0 {
+        if (txCharacteristic!.properties.rawValue & CBCharacteristicProperties.writeWithoutResponse.rawValue) != 0 {
             
-            writeType = CBCharacteristicWriteType.WithoutResponse
+            writeType = CBCharacteristicWriteType.withoutResponse
             
         }
             
-        else if ((txCharacteristic!.properties.rawValue & CBCharacteristicProperties.Write.rawValue) != 0){
+        else if ((txCharacteristic!.properties.rawValue & CBCharacteristicProperties.write.rawValue) != 0){
             
-            writeType = CBCharacteristicWriteType.WithResponse
+            writeType = CBCharacteristicWriteType.withResponse
         }
             
         else{
@@ -114,12 +114,12 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
         //TODO: Test packetization
         
         //send data in lengths of <= 20 bytes
-        let dataLength = data.length
+        let dataLength = data.count
         let limit = 20
         
         //Below limit, send as-is
         if dataLength <= limit {
-            currentPeripheral.writeValue(data, forCharacteristic: txCharacteristic!, type: writeType)
+            currentPeripheral.writeValue(data, for: txCharacteristic!, type: writeType)
         }
             
             //Above limit, send in lengths <= 20 bytes
@@ -137,11 +137,11 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
                 }
                 
                 let range = NSMakeRange(loc, len)
-                var newBytes = [UInt8](count: len, repeatedValue: 0)
-                data.getBytes(&newBytes, range: range)
-                let newData = NSData(bytes: newBytes, length: len)
+                var newBytes = [UInt8](repeating: 0, count: len)
+                (data as NSData).getBytes(&newBytes, range: range)
+                let newData = Data(bytes: UnsafePointer<UInt8>(newBytes), count: len)
                 //                    println("\(self.classForCoder.description()) writeRawData : packet_\(idx) : \(newData.hexRepresentationWithSpaces(true))")
-                self.currentPeripheral.writeValue(newData, forCharacteristic: self.txCharacteristic!, type: writeType)
+                self.currentPeripheral.writeValue(newData, for: self.txCharacteristic!, type: writeType)
                 
                 loc += len
                 idx += 1
@@ -153,7 +153,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     
     //MARK: CBPeripheral Delegate methods
     
-    func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         
         //Respond to finding a new service on peripheral
         
@@ -174,30 +174,30 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
             
             // Service characteristics already discovered
             if (s.characteristics != nil){
-                self.peripheral(peripheral, didDiscoverCharacteristicsForService: s, error: nil)    // If characteristics have already been discovered, do not check again
+                self.peripheral(peripheral, didDiscoverCharacteristicsFor: s, error: nil)    // If characteristics have already been discovered, do not check again
             }
                 
             //UART, Pin I/O, or Controller mode
-            else if delegate.connectionMode == ConnectionMode.UART ||
-                    delegate.connectionMode == ConnectionMode.PinIO ||
-                    delegate.connectionMode == ConnectionMode.Controller ||
-                    delegate.connectionMode == ConnectionMode.DFU {
-                if UUIDsAreEqual(s.UUID, secondID: uartServiceUUID()) {
+            else if delegate.connectionMode == ConnectionMode.uart ||
+                    delegate.connectionMode == ConnectionMode.pinIO ||
+                    delegate.connectionMode == ConnectionMode.controller ||
+                    delegate.connectionMode == ConnectionMode.dfu {
+                if UUIDsAreEqual(s.uuid, secondID: uartServiceUUID()) {
                     uartService = s
-                    peripheral.discoverCharacteristics([txCharacteristicUUID(), rxCharacteristicUUID()], forService: uartService!)
+                    peripheral.discoverCharacteristics([txCharacteristicUUID(), rxCharacteristicUUID()], for: uartService!)
                 }
             }
                 
             // Info mode
-            else if delegate.connectionMode == ConnectionMode.Info {
+            else if delegate.connectionMode == ConnectionMode.info {
                 knownServices.append(s)
-                peripheral.discoverCharacteristics(nil, forService: s)
+                peripheral.discoverCharacteristics(nil, for: s)
             }
             
             //DFU / Firmware Updater mode
-            else if delegate.connectionMode == ConnectionMode.DFU {
+            else if delegate.connectionMode == ConnectionMode.dfu {
                 knownServices.append(s)
-                peripheral.discoverCharacteristics(nil, forService: s)
+                peripheral.discoverCharacteristics(nil, for: s)
             }
             
         }
@@ -207,7 +207,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         
         //Respond to finding a new characteristic on service
         
@@ -221,18 +221,18 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
         printLog(self, funcName: "didDiscoverCharacteristicsForService", logString: "\(service.description) with \(service.characteristics!.count) characteristics")
         
         // UART mode
-        if  delegate.connectionMode == ConnectionMode.UART ||
-            delegate.connectionMode == ConnectionMode.PinIO ||
-            delegate.connectionMode == ConnectionMode.Controller ||
-            delegate.connectionMode == ConnectionMode.DFU {
+        if  delegate.connectionMode == ConnectionMode.uart ||
+            delegate.connectionMode == ConnectionMode.pinIO ||
+            delegate.connectionMode == ConnectionMode.controller ||
+            delegate.connectionMode == ConnectionMode.dfu {
             
             for c in (service.characteristics as [CBCharacteristic]!) {
                 
-                switch c.UUID {
+                switch c.uuid {
                 case rxCharacteristicUUID():         //"6e400003-b5a3-f393-e0a9-e50e24dcca9e"
                     printLog(self, funcName: "didDiscoverCharacteristicsForService", logString: "\(service.description) : RX")
                     rxCharacteristic = c
-                    currentPeripheral.setNotifyValue(true, forCharacteristic: rxCharacteristic!)
+                    currentPeripheral.setNotifyValue(true, for: rxCharacteristic!)
                     break
                 case txCharacteristicUUID():         //"6e400002-b5a3-f393-e0a9-e50e24dcca9e"
                     printLog(self, funcName: "didDiscoverCharacteristicsForService", logString: "\(service.description) : TX")
@@ -246,23 +246,23 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
             }
             
             if rxCharacteristic != nil && txCharacteristic != nil {
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.async(execute: { () -> Void in
                     self.delegate.connectionFinalized()
                 })
             }
         }
         
         // Info mode
-        else if delegate.connectionMode == ConnectionMode.Info {
+        else if delegate.connectionMode == ConnectionMode.info {
             
             for c in (service.characteristics as [CBCharacteristic]!) {
                 
                 //Read readable characteristic values
-                if (c.properties.rawValue & CBCharacteristicProperties.Read.rawValue) != 0 {
-                    peripheral.readValueForCharacteristic(c)
+                if (c.properties.rawValue & CBCharacteristicProperties.read.rawValue) != 0 {
+                    peripheral.readValue(for: c)
                 }
                 
-                peripheral.discoverDescriptorsForCharacteristic(c)
+                peripheral.discoverDescriptors(for: c)
                 
             }
             
@@ -271,7 +271,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func peripheral(peripheral: CBPeripheral, didDiscoverDescriptorsForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
         
         if error != nil {
 //            handleError("Error discovering descriptors \(error.debugDescription)")
@@ -304,7 +304,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
 //                println("found characteristic index \(idx)")
                 if (idx + 1) == allCharacteristics.count {
 //                    println("found last characteristic")
-                    if delegate.connectionMode == ConnectionMode.Info {
+                    if delegate.connectionMode == ConnectionMode.info {
                         delegate.connectionFinalized()
                     }
                 }
@@ -331,7 +331,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
 //    }
     
     
-    func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         
         //Respond to value change on peripheral
         
@@ -342,17 +342,17 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
         }
         
         //UART mode
-        if delegate.connectionMode == ConnectionMode.UART || delegate.connectionMode == ConnectionMode.PinIO || delegate.connectionMode == ConnectionMode.Controller {
+        if delegate.connectionMode == ConnectionMode.uart || delegate.connectionMode == ConnectionMode.pinIO || delegate.connectionMode == ConnectionMode.controller {
             
             if (characteristic == self.rxCharacteristic){
                 
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.async(execute: { () -> Void in
                     self.delegate.didReceiveData(characteristic.value!)
                 })
                 
             }
                 //TODO: Finalize for info mode
-            else if UUIDsAreEqual(characteristic.UUID, secondID: softwareRevisionStringUUID()) {
+            else if UUIDsAreEqual(characteristic.uuid, secondID: softwareRevisionStringUUID()) {
                 
 //                var swRevision = NSString(string: "")
 //                let bytes:UnsafePointer<Void> = characteristic.value!.bytes
@@ -361,7 +361,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
 //                    swRevision = NSString(format: "0x%x", UInt8(bytes[i]) )
 //                }
                 
-                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.async(execute: { () -> Void in
                     self.delegate.connectionFinalized()
                 })
             }
@@ -372,7 +372,7 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func peripheral(peripheral: CBPeripheral, didDiscoverIncludedServicesForService service: CBService, error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverIncludedServicesFor service: CBService, error: Error?) {
         
         //Respond to finding a new characteristic on service
         
@@ -395,11 +395,11 @@ class BLEPeripheral: NSObject, CBPeripheralDelegate {
     }
     
     
-    func handleError(errorString:String) {
+    func handleError(_ errorString:String) {
         
         printLog(self, funcName: "Error", logString: "\(errorString)")
         
-        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+        DispatchQueue.main.async(execute: { () -> Void in
             self.delegate.uartDidEncounterError(errorString)
         })
         

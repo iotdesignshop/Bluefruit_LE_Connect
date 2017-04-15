@@ -19,8 +19,8 @@ class MqttSettingsHeaderCell: UITableViewCell {
     // Data
     var isOnChanged : ((Bool) -> ())?
     
-    @IBAction func isOnValueChanged(sender: UISwitch) {
-        self.isOnChanged?(sender.on)
+    @IBAction func isOnValueChanged(_ sender: UISwitch) {
+        self.isOnChanged?(sender.isOn)
     }
  
     /*

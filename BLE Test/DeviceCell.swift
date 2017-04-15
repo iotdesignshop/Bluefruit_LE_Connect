@@ -16,9 +16,9 @@ class DeviceCell: UITableViewCell {
     var uartCapableLabel:UILabel!
     var signalImageView:UIImageView!
     var signalImages:[UIImage]!
-    private var lastSigIndex = -1
-    private var lastSigUpdate:Double = NSDate.timeIntervalSinceReferenceDate()
-    private let updateIntvl = 3.0
+    fileprivate var lastSigIndex = -1
+    fileprivate var lastSigUpdate:Double = Date.timeIntervalSinceReferenceDate
+    fileprivate let updateIntvl = 3.0
     var connectButton:UIButton!
     var isOpen:Bool = false
 
@@ -29,22 +29,22 @@ class DeviceCell: UITableViewCell {
         
     }
 
-    override func setSelected(selected: Bool, animated: Bool) {
+    override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
 
         // Configure the view for the selected state
     }
     
     
-    func updateSignalImage(RSSI:NSNumber) {
+    func updateSignalImage(_ RSSI:NSNumber) {
         
         // Only update every few seconds
-        let now = NSDate.timeIntervalSinceReferenceDate()
+        let now = Date.timeIntervalSinceReferenceDate
         if lastSigIndex != -1 && (now - lastSigUpdate) < updateIntvl {
             return
         }
         
-        let rssiInt = RSSI.integerValue
+        let rssiInt = RSSI.intValue
         var rssiString = RSSI.stringValue
         var index = 0
         

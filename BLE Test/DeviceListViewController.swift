@@ -14,8 +14,8 @@ protocol DeviceListViewControllerDelegate: HelpViewControllerDelegate, UIAlertVi
     
     var connectionMode:ConnectionMode { get }
     var warningLabel:UILabel! { get }
-    func connectPeripheral(peripheral:CBPeripheral, mode:ConnectionMode)
-    func launchDFU(peripheral:CBPeripheral)
+    func connectPeripheral(_ peripheral:CBPeripheral, mode:ConnectionMode)
+    func launchDFU(_ peripheral:CBPeripheral)
     func stopScan()
     func startScan()
 }
@@ -28,8 +28,8 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     @IBOutlet var deviceCell:DeviceCell!
     @IBOutlet var attributeCell:AttributeCell!
     var devices:[BLEDevice] = []
-    private var tableIsLoading = false
-    private var signalImages:[UIImage]!
+    fileprivate var tableIsLoading = false
+    fileprivate var signalImages:[UIImage]!
     
     
     convenience init(aDelegate:DeviceListViewControllerDelegate){
@@ -45,10 +45,10 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
             nibName = "DeviceListViewController_iPad"
         }
         
-        self.init(nibName: nibName as String, bundle: NSBundle.mainBundle())
+        self.init(nibName: nibName as String, bundle: Bundle.main)
         
         self.delegate = aDelegate
-        self.title = NSBundle.mainBundle().objectForInfoDictionaryKey("CFBundleDisplayName") as? String
+        self.title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
         
         self.signalImages = [UIImage](arrayLiteral: UIImage(named: "signalStrength-0.png")!,
             UIImage(named: "signalStrength-1.png")!,
@@ -62,20 +62,20 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        tableView.separatorStyle = UITableViewCellSeparatorStyle.None
+        tableView.separatorStyle = UITableViewCellSeparatorStyle.none
         self.helpViewController.delegate = delegate
         
         //Add pull-to-refresh functionality
-        let tvc = UITableViewController(style: UITableViewStyle.Plain)
+        let tvc = UITableViewController(style: UITableViewStyle.plain)
         tvc.tableView = tableView
         let refresh = UIRefreshControl()
-        refresh.addTarget(self, action: Selector("refreshWasPulled:"), forControlEvents: UIControlEvents.ValueChanged)
+        refresh.addTarget(self, action: Selector("refreshWasPulled:"), for: UIControlEvents.valueChanged)
         tvc.refreshControl = refresh
         
     }
     
     
-    func cellButtonTapped(sender: UIButton) {
+    func cellButtonTapped(_ sender: UIButton) {
         
 //        println("\(self.classForCoder.description()) cellButtonTapped: \(sender.tag)")
         
@@ -85,33 +85,33 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
         }
         
         //find relevant indexPaths
-        let indexPath:NSIndexPath = indexPathForSubview(sender)
-        var attributePathArray:[NSIndexPath] = []
+        let indexPath:IndexPath = indexPathForSubview(sender)
+        var attributePathArray:[IndexPath] = []
         for i in 1...(devices[indexPath.section].advertisementArray.count) {
-            attributePathArray.append(NSIndexPath(forRow: i, inSection: indexPath.section))
+            attributePathArray.append(IndexPath(row: i, section: indexPath.section))
         }
         
         //if same button is tapped as previous, close the cell
-        let senderCell = tableView.cellForRowAtIndexPath(indexPath) as! DeviceCell
+        let senderCell = tableView.cellForRow(at: indexPath) as! DeviceCell
         
-        animateCellSelection(tableView.cellForRowAtIndexPath(indexPath)!)
+        animateCellSelection(tableView.cellForRow(at: indexPath)!)
         
         tableView.beginUpdates()
         if (senderCell.isOpen == true) {
 //            println("- - - -"); println("sections \(indexPath.section) has \(tableView.numberOfRowsInSection(indexPath.section)) rows"); println("deleting \(attributePathArray.count) rows"); println("- - - -")
             senderCell.isOpen = false
-            tableView.deleteRowsAtIndexPaths(attributePathArray, withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.deleteRows(at: attributePathArray, with: UITableViewRowAnimation.fade)
         }
         else {
             senderCell.isOpen = true
-            tableView.insertRowsAtIndexPaths(attributePathArray, withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.insertRows(at: attributePathArray, with: UITableViewRowAnimation.fade)
         }
         tableView.endUpdates()
         
     }
     
     
-    func connectButtonTapped(sender: UIButton) {
+    func connectButtonTapped(_ sender: UIButton) {
         
         printLog(self, funcName: "connectButtonTapped", logString: "\(sender.tag)")
         
@@ -130,64 +130,64 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
 */
         
         //Show connection options for UART capable devices
-        var style = UIAlertControllerStyle.ActionSheet
+        var style = UIAlertControllerStyle.actionSheet
         if IS_IPAD {
-            style = UIAlertControllerStyle.Alert
+            style = UIAlertControllerStyle.alert
         }
         let alertController = UIAlertController(title: "Connect to \(device.name)", message: "Choose mode:", preferredStyle: style)
         
         
         // Cancel button
-        let aaCancel = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel) { (aa:UIAlertAction!) -> Void in }
+        let aaCancel = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel) { (aa:UIAlertAction!) -> Void in }
         alertController.addAction(aaCancel)
         
         // Info button
-        let aaInfo = UIAlertAction(title: "Info", style: UIAlertActionStyle.Default) { (aa:UIAlertAction!) -> Void in
-            self.connectInMode(ConnectionMode.Info, peripheral: device.peripheral)
+        let aaInfo = UIAlertAction(title: "Info", style: UIAlertActionStyle.default) { (aa:UIAlertAction!) -> Void in
+            self.connectInMode(ConnectionMode.info, peripheral: device.peripheral)
         }
         alertController.addAction(aaInfo)
         
         if (device.isUART) {
             //UART button
-            let aaUART = UIAlertAction(title: "UART", style: UIAlertActionStyle.Default) { (aa:UIAlertAction!) -> Void in
-                self.connectInMode(ConnectionMode.UART, peripheral: device.peripheral)
+            let aaUART = UIAlertAction(title: "UART", style: UIAlertActionStyle.default) { (aa:UIAlertAction!) -> Void in
+                self.connectInMode(ConnectionMode.uart, peripheral: device.peripheral)
             }
             alertController.addAction(aaUART)
             
             //Pin I/O button
-            let aaPinIO = UIAlertAction(title: "Pin I/O", style: UIAlertActionStyle.Default) { (aa:UIAlertAction!) -> Void in
-                self.connectInMode(ConnectionMode.PinIO, peripheral: device.peripheral)
+            let aaPinIO = UIAlertAction(title: "Pin I/O", style: UIAlertActionStyle.default) { (aa:UIAlertAction!) -> Void in
+                self.connectInMode(ConnectionMode.pinIO, peripheral: device.peripheral)
             }
             alertController.addAction(aaPinIO)
             
             //Controller Button
-            let aaController = UIAlertAction(title: "Controller", style: UIAlertActionStyle.Default) { (aa:UIAlertAction!) -> Void in
-                self.connectInMode(ConnectionMode.Controller, peripheral: device.peripheral)
+            let aaController = UIAlertAction(title: "Controller", style: UIAlertActionStyle.default) { (aa:UIAlertAction!) -> Void in
+                self.connectInMode(ConnectionMode.controller, peripheral: device.peripheral)
             }
             alertController.addAction(aaController)
         }
         
         // DFU button
-        let aaUpdater = UIAlertAction(title: "Firmware Updater", style: UIAlertActionStyle.Default) { (aa:UIAlertAction!) -> Void in
+        let aaUpdater = UIAlertAction(title: "Firmware Updater", style: UIAlertActionStyle.default) { (aa:UIAlertAction!) -> Void in
             self.delegate?.launchDFU(device.peripheral)
         }
         alertController.addAction(aaUpdater)
         
         
-        self.presentViewController(alertController, animated: true) { () -> Void in
+        self.present(alertController, animated: true) { () -> Void in
         }
     
     }
     
     
-    func connectInMode(mode:ConnectionMode, peripheral:CBPeripheral) {
+    func connectInMode(_ mode:ConnectionMode, peripheral:CBPeripheral) {
         
 //        println("\(self.classForCoder.description()) connectInMode")
         switch mode {
-        case ConnectionMode.UART,
-             ConnectionMode.PinIO,
-             ConnectionMode.Info,
-             ConnectionMode.Controller:
+        case ConnectionMode.uart,
+             ConnectionMode.pinIO,
+             ConnectionMode.info,
+             ConnectionMode.controller:
             delegate?.connectPeripheral(peripheral, mode: mode)
         default:
             break
@@ -196,7 +196,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func didFindPeripheral(peripheral:CBPeripheral!, advertisementData:[NSObject : AnyObject]!, RSSI:NSNumber!) {
+    func didFindPeripheral(_ peripheral:CBPeripheral!, advertisementData:[AnyHashable: Any]!, RSSI:NSNumber!) {
         
 //        println("\(self.classForCoder.description()) didFindPeripheral")
         
@@ -226,20 +226,20 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func didConnectPeripheral(peripheral:CBPeripheral!) {
+    func didConnectPeripheral(_ peripheral:CBPeripheral!) {
         
         
         
     }
     
     
-    func refreshWasPulled(sender:UIRefreshControl) {
+    func refreshWasPulled(_ sender:UIRefreshControl) {
         
         delegate?.stopScan()
         
         tableView.beginUpdates()
-        tableView.deleteSections(NSIndexSet(indexesInRange: NSMakeRange(0, tableView.numberOfSections)), withRowAnimation: UITableViewRowAnimation.Fade)
-        devices.removeAll(keepCapacity: false)
+        tableView.deleteSections(IndexSet(integersIn: NSMakeRange(0, tableView.numberOfSections).toRange()!), with: UITableViewRowAnimation.fade)
+        devices.removeAll(keepingCapacity: false)
         tableView.endUpdates()
         
         delay(0.45, closure: { () -> () in
@@ -262,8 +262,8 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
         delegate?.stopScan()
         
         tableView.beginUpdates()
-        tableView.deleteSections(NSIndexSet(indexesInRange: NSMakeRange(0, tableView.numberOfSections)), withRowAnimation: UITableViewRowAnimation.Fade)
-        devices.removeAll(keepCapacity: false)
+        tableView.deleteSections(IndexSet(integersIn: NSMakeRange(0, tableView.numberOfSections).toRange()!), with: UITableViewRowAnimation.fade)
+        devices.removeAll(keepingCapacity: false)
         tableView.endUpdates()
         
         tableIsLoading = true
@@ -278,7 +278,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     
     //MARK: TableView functions
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         // Each device has its own section
         // row 0 is the device cell
@@ -294,17 +294,17 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
             }
             
             //Create Device Cell from NIB
-            let cellData = NSKeyedArchiver.archivedDataWithRootObject(deviceCell)
-            let cell:DeviceCell = NSKeyedUnarchiver.unarchiveObjectWithData(cellData) as! DeviceCell
+            let cellData = NSKeyedArchiver.archivedData(withRootObject: deviceCell)
+            let cell:DeviceCell = NSKeyedUnarchiver.unarchiveObject(with: cellData) as! DeviceCell
             
             //Assign properties via view tags set in IB
             cell.nameLabel = cell.viewWithTag(100) as! UILabel
             cell.rssiLabel = cell.viewWithTag(101) as! UILabel
             cell.connectButton = cell.viewWithTag(102) as! UIButton
-            cell.connectButton.addTarget(self, action: Selector("connectButtonTapped:"), forControlEvents: UIControlEvents.TouchUpInside)
+            cell.connectButton.addTarget(self, action: Selector("connectButtonTapped:"), for: UIControlEvents.touchUpInside)
             cell.connectButton.layer.cornerRadius = 4.0
             cell.toggleButton = cell.viewWithTag(103) as! UIButton
-            cell.toggleButton.addTarget(self, action: Selector("cellButtonTapped:"), forControlEvents: UIControlEvents.TouchUpInside)
+            cell.toggleButton.addTarget(self, action: Selector("cellButtonTapped:"), for: UIControlEvents.touchUpInside)
             cell.signalImageView = cell.viewWithTag(104) as! UIImageView
             cell.uartCapableLabel = cell.viewWithTag(105) as! UILabel
             //set tag to indicate digital pin number
@@ -323,13 +323,13 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
         //Attribute Cell
         else {
             //Create Device Cell from NIB
-            let cellData = NSKeyedArchiver.archivedDataWithRootObject(attributeCell)
-            let cell:AttributeCell = NSKeyedUnarchiver.unarchiveObjectWithData(cellData) as! AttributeCell
+            let cellData = NSKeyedArchiver.archivedData(withRootObject: attributeCell)
+            let cell:AttributeCell = NSKeyedUnarchiver.unarchiveObject(with: cellData) as! AttributeCell
             
             //Assign properties via tags
             cell.label = cell.viewWithTag(100) as! UILabel
             cell.button = cell.viewWithTag(103) as! UIButton
-            cell.button.addTarget(self, action: Selector("selectAttributeCell:"), forControlEvents: UIControlEvents.TouchUpInside)
+            cell.button.addTarget(self, action: Selector("selectAttributeCell:"), for: UIControlEvents.touchUpInside)
             cell.dataStrings = devices[indexPath.section].advertisementArray[indexPath.row - 1]
             
             return cell
@@ -338,7 +338,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
         let device:BLEDevice? = devices[section]
         let cell = device?.deviceCell
@@ -355,14 +355,14 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         
         //Each DeviceCell gets its own section
         return devices.count
     }
     
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.row == 0 {
             return 50.0
         }
@@ -372,7 +372,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         
         if section == 0 {
             return 46.0
@@ -383,7 +383,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func tableView(tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         
         if section == (devices.count-1) {
             return 22.0
@@ -394,7 +394,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         
         if (section == 0){
             return "Peripherals"
@@ -408,11 +408,11 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     
     //MARK: Helper functions
     
-    func indexPathForSubview(theView:UIView) ->NSIndexPath{
+    func indexPathForSubview(_ theView:UIView) ->IndexPath{
         
         //Find the indexpath for the cell which contains theView
         
-        var indexPath: NSIndexPath?
+        var indexPath: IndexPath?
         var counter = 0
         let limit = 20
         var aView:UIView? = theView
@@ -423,7 +423,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
             }
             if aView?.superview is UITableViewCell {
                 let theCell = aView?.superview as! UITableViewCell
-                indexPath = tableView.indexPathForCell(theCell)
+                indexPath = tableView.indexPath(for: theCell)
             }
             else {
                 aView = theView.superview
@@ -436,13 +436,13 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
     }
     
     
-    func selectAttributeCell(sender: UIButton){
+    func selectAttributeCell(_ sender: UIButton){
         
         let indexPath = indexPathForSubview(sender)
         
-        let cell = tableView.cellForRowAtIndexPath(indexPath) as! AttributeCell
+        let cell = tableView.cellForRow(at: indexPath) as! AttributeCell
         
-        tableView.selectRowAtIndexPath(indexPath, animated: true, scrollPosition: UITableViewScrollPosition.None)
+        tableView.selectRow(at: indexPath, animated: true, scrollPosition: UITableViewScrollPosition.none)
         
         //Show full view of attribute data
         let ttl = cell.dataStrings[0]
@@ -459,13 +459,13 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
         
 //        var style = UIAlertControllerStyle.ActionSheet
 //        if IS_IPAD {
-            let style = UIAlertControllerStyle.Alert
+            let style = UIAlertControllerStyle.alert
 //        }
         let alertController = UIAlertController(title: ttl, message: msg, preferredStyle: style)
         
         
         // Cancel button
-        let aaCancel = UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel) { (aa:UIAlertAction!) -> Void in }
+        let aaCancel = UIAlertAction(title: "OK", style: UIAlertActionStyle.cancel) { (aa:UIAlertAction!) -> Void in }
         alertController.addAction(aaCancel)
         
         // Info button
@@ -473,7 +473,7 @@ class DeviceListViewController : UIViewController, UITableViewDelegate, UITableV
 //            self.connectInMode(ConnectionMode.Info, peripheral: device.peripheral)
 //    }
         
-        self.presentViewController(alertController, animated: true) { () -> Void in
+        self.present(alertController, animated: true) { () -> Void in
             
         }
     

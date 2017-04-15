@@ -13,7 +13,7 @@ import Dispatch
 
 protocol UARTViewControllerDelegate: HelpViewControllerDelegate {
     
-    func sendData(newData:NSData)
+    func sendData(_ newData:Data)
     
 }
 
@@ -21,14 +21,14 @@ protocol UARTViewControllerDelegate: HelpViewControllerDelegate {
 class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDelegate, MqttManagerDelegate, UIPopoverControllerDelegate {
 
     enum ConsoleDataType {
-        case Log
-        case RX
-        case TX
+        case log
+        case rx
+        case tx
     }
     
     enum ConsoleMode {
-        case ASCII
-        case HEX
+        case ascii
+        case hex
     }
     
     var delegate:UARTViewControllerDelegate?
@@ -44,25 +44,25 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     @IBOutlet var sendButton: UIButton!
     @IBOutlet var echoSwitch:UISwitch!
     
-    private var mqttBarButtonItem : UIBarButtonItem?
-    private var mqttBarButtonItemImageView : UIImageView?
-    private var mqttSettingsPopoverController:UIPopoverController?
+    fileprivate var mqttBarButtonItem : UIBarButtonItem?
+    fileprivate var mqttBarButtonItemImageView : UIImageView?
+    fileprivate var mqttSettingsPopoverController:UIPopoverController?
     
-    private var echoLocal:Bool = false
-    private var keyboardIsShown:Bool = false
-    private var consoleAsciiText:NSAttributedString? = NSAttributedString(string: "")
-    private var consoleHexText: NSAttributedString? = NSAttributedString(string: "")
-    private let backgroundQueue : dispatch_queue_t = dispatch_queue_create("com.adafruit.bluefruitconnect.bgqueue", nil)
-    private var lastScroll:CFTimeInterval = 0.0
-    private let scrollIntvl:CFTimeInterval = 1.0
-    private var lastScrolledLength = 0
-    private var scrollTimer:NSTimer?
-    private var blueFontDict:NSDictionary!
-    private var redFontDict:NSDictionary!
-    private var mqttFontDict:NSDictionary!
-    private let unkownCharString:NSString = "�"
-    private let kKeyboardAnimationDuration = 0.3
-    private let notificationCommandString = "N!"
+    fileprivate var echoLocal:Bool = false
+    fileprivate var keyboardIsShown:Bool = false
+    fileprivate var consoleAsciiText:NSAttributedString? = NSAttributedString(string: "")
+    fileprivate var consoleHexText: NSAttributedString? = NSAttributedString(string: "")
+    fileprivate let backgroundQueue : DispatchQueue = DispatchQueue(label: "com.adafruit.bluefruitconnect.bgqueue", attributes: [])
+    fileprivate var lastScroll:CFTimeInterval = 0.0
+    fileprivate let scrollIntvl:CFTimeInterval = 1.0
+    fileprivate var lastScrolledLength = 0
+    fileprivate var scrollTimer:Timer?
+    fileprivate var blueFontDict:NSDictionary!
+    fileprivate var redFontDict:NSDictionary!
+    fileprivate var mqttFontDict:NSDictionary!
+    fileprivate let unkownCharString:NSString = "�"
+    fileprivate let kKeyboardAnimationDuration = 0.3
+    fileprivate let notificationCommandString = "N!"
     
     
     convenience init(aDelegate:UARTViewControllerDelegate){
@@ -78,7 +78,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             nibName = "UARTViewController_iPad"
         }
         
-        self.init(nibName: nibName as String, bundle: NSBundle.mainBundle())
+        self.init(nibName: nibName as String, bundle: Bundle.main)
         
         self.delegate = aDelegate
         self.title = "UART"
@@ -102,9 +102,9 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
 
         //retrieve console font
         let consoleFont = consoleView.font
-        blueFontDict = NSDictionary(objects: [consoleFont!, UIColor.blueColor()], forKeys: [NSFontAttributeName,NSForegroundColorAttributeName])
-        redFontDict = NSDictionary(objects: [consoleFont!, UIColor.redColor()], forKeys: [NSFontAttributeName,NSForegroundColorAttributeName])
-        mqttFontDict = NSDictionary(objects: [consoleFont!, UIColor(red: 85/255, green: 85/255, blue: 85/255, alpha: 1)], forKeys: [NSFontAttributeName,NSForegroundColorAttributeName])
+        blueFontDict = NSDictionary(objects: [consoleFont!, UIColor.blue], forKeys: [NSFontAttributeName as NSCopying,NSForegroundColorAttributeName])
+        redFontDict = NSDictionary(objects: [consoleFont!, UIColor.red], forKeys: [NSFontAttributeName as NSCopying,NSForegroundColorAttributeName])
+        mqttFontDict = NSDictionary(objects: [consoleFont!, UIColor(red: 85/255, green: 85/255, blue: 85/255, alpha: 1)], forKeys: [NSFontAttributeName as NSCopying,NSForegroundColorAttributeName])
     
         //fix for UITextView
         consoleView.layoutManager.allowsNonContiguousLayout = false
@@ -142,7 +142,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         
         super.viewWillAppear(animated)
         
@@ -151,8 +151,8 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
         echoSwitch.setOn(echoLocal, animated: false)
         
         //register for keyboard notifications
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillShow:"), name: "UIKeyboardWillShowNotification", object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: Selector("keyboardWillHide:"), name: "UIKeyboardWillHideNotification", object: nil)
+        NotificationCenter.default.addObserver(self, selector: Selector("keyboardWillShow:"), name: NSNotification.Name(rawValue: "UIKeyboardWillShowNotification"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: Selector("keyboardWillHide:"), name: NSNotification.Name(rawValue: "UIKeyboardWillHideNotification"), object: nil)
         
         //register for textfield notifications
         //        NSNotificationCenter.defaultCenter().addObserver(self, selector: "textFieldDidChange", name: "UITextFieldTextDidChangeNotification", object:self.view.window)
@@ -164,43 +164,43 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
         scrollTimer?.invalidate()
         
-        scrollTimer = NSTimer.scheduledTimerWithTimeInterval(0.5, target: self, selector: Selector("scrollConsoleToBottom:"), userInfo: nil, repeats: true)
+        scrollTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: Selector("scrollConsoleToBottom:"), userInfo: nil, repeats: true)
         scrollTimer?.tolerance = 0.75
     }
     
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
         scrollTimer?.invalidate()
     }
     
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         
         //unregister for keyboard notifications
-        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillShowNotification, object: nil)
-        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillHideNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
         
         super.viewWillDisappear(animated)
         
     }
     
     
-    func updateConsoleWithIncomingData(newData:NSData) {
+    func updateConsoleWithIncomingData(_ newData:Data) {
         
         //Write new received data to the console text view
-        dispatch_async(backgroundQueue, { () -> Void in
+        backgroundQueue.async(execute: { () -> Void in
             //convert data to string & replace characters we can't display
-            let dataLength:Int = newData.length
-            var data = [UInt8](count: dataLength, repeatedValue: 0)
+            let dataLength:Int = newData.count
+            var data = [UInt8](repeating: 0, count: dataLength)
             
-            newData.getBytes(&data, length: dataLength)
+            (newData as NSData).getBytes(&data, length: dataLength)
             
             for index in 0...dataLength-1 {
                 if (data[index] <= 0x1f) || (data[index] >= 0x80) { //null characters
@@ -214,7 +214,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             }
             
             
-            let newString = NSString(bytes: &data, length: dataLength, encoding: NSUTF8StringEncoding)
+            let newString = NSString(bytes: &data, length: dataLength, encoding: String.Encoding.utf8.rawValue)
             printLog(self, funcName: "updateConsoleWithIncomingData", logString: newString! as String)
             
             //Check for notification command & send if needed
@@ -229,16 +229,16 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             let appendString = "" // or "\n"
             let attrAString = NSAttributedString(string: ((newString! as String)+appendString), attributes: self.redFontDict as? [String : AnyObject])
             let newAsciiText = NSMutableAttributedString(attributedString: self.consoleAsciiText!)
-            newAsciiText.appendAttributedString(attrAString)
+            newAsciiText.append(attrAString)
             
             let newHexString = newData.hexRepresentationWithSpaces(true)
             let attrHString = NSAttributedString(string: newHexString as String, attributes: self.redFontDict as? [String : AnyObject])
             let newHexText = NSMutableAttributedString(attributedString: self.consoleHexText!)
-            newHexText.appendAttributedString(attrHString)
+            newHexText.append(attrHString)
             
             
             
-            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            DispatchQueue.main.async(execute: { () -> Void in
                 self.updateConsole(newAsciiText, hexText: newHexText)
 //                self.insertConsoleText(attrAString.string, hexText: attrHString.string)
             })
@@ -247,7 +247,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func updateConsole(asciiText: NSAttributedString, hexText: NSAttributedString){
+    func updateConsole(_ asciiText: NSAttributedString, hexText: NSAttributedString){
         
         consoleAsciiText = asciiText
         consoleHexText = hexText
@@ -280,7 +280,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func scrollConsoleToBottom(timer:NSTimer) {
+    func scrollConsoleToBottom(_ timer:Timer) {
     
 //        printLog(self, "scrollConsoleToBottom", "")
         
@@ -297,7 +297,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func updateConsoleWithOutgoingString(newString:NSString, wasReceivedFromMqtt : Bool){
+    func updateConsoleWithOutgoingString(_ newString:NSString, wasReceivedFromMqtt : Bool){
         
         //Write new sent data to the console text view
         let textColorDict = wasReceivedFromMqtt ? mqttFontDict:blueFontDict
@@ -306,14 +306,14 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
         let appendString = "" // or "\n"
         let attrString = NSAttributedString(string: (newString as String) + appendString, attributes: textColorDict as? [String : AnyObject])
         let newAsciiText = NSMutableAttributedString(attributedString: self.consoleAsciiText!)
-        newAsciiText.appendAttributedString(attrString)
+        newAsciiText.append(attrString)
         consoleAsciiText = newAsciiText
         
         
         //Update Hex text
         let attrHexString = NSAttributedString(string: newString.toHexSpaceSeparated() as String, attributes: textColorDict as? [String : AnyObject])
         let newHexText = NSMutableAttributedString(attributedString: self.consoleHexText!)
-        newHexText.appendAttributedString(attrHexString)
+        newHexText.append(attrHexString)
         consoleHexText = newHexText
         
         //write string to console based on mode selection
@@ -350,7 +350,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    @IBAction func clearConsole(sender : AnyObject) {
+    @IBAction func clearConsole(_ sender : AnyObject) {
         
         consoleView.text = ""
         consoleAsciiText = NSAttributedString()
@@ -359,15 +359,15 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    @IBAction func copyConsole(sender : AnyObject) {
+    @IBAction func copyConsole(_ sender : AnyObject) {
         
-        let pasteBoard = UIPasteboard.generalPasteboard()
+        let pasteBoard = UIPasteboard.general
         pasteBoard.string = consoleView.text
         let cyan = UIColor(red: 32.0/255.0, green: 149.0/255.0, blue: 251.0/255.0, alpha: 1.0)
         consoleView.backgroundColor = cyan
         
-        UIView.animateWithDuration(0.45, delay: 0.0, options: UIViewAnimationOptions.CurveEaseIn, animations: { () -> Void in
-            self.consoleView.backgroundColor = UIColor.whiteColor()
+        UIView.animate(withDuration: 0.45, delay: 0.0, options: UIViewAnimationOptions.curveEaseIn, animations: { () -> Void in
+            self.consoleView.backgroundColor = UIColor.white
         }) { (finished) -> Void in
             
         }
@@ -375,7 +375,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    @IBAction func sendMessage(sender:AnyObject){
+    @IBAction func sendMessage(_ sender:AnyObject){
         
 //        sendButton.enabled = false
         
@@ -387,7 +387,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
         if (inputTextView.text == ""){
             return
         }
-        let newString:NSString = inputTextView.text
+        let newString:NSString = inputTextView.text as! NSString
      
         sendUartMessage(newString, wasReceivedFromMqtt: false)
         
@@ -399,19 +399,19 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func sendUartMessage(message: NSString, wasReceivedFromMqtt: Bool) {
+    func sendUartMessage(_ message: NSString, wasReceivedFromMqtt: Bool) {
         // MQTT publish to TX
         let mqttSettings = MqttSettings.sharedInstance
         if(mqttSettings.isPublishEnabled) {
-            if let topic = mqttSettings.getPublishTopic(MqttSettings.PublishFeed.TX.rawValue) {
-                let qos = mqttSettings.getPublishQos(MqttSettings.PublishFeed.TX.rawValue)
+            if let topic = mqttSettings.getPublishTopic(MqttSettings.PublishFeed.tx.rawValue) {
+                let qos = mqttSettings.getPublishQos(MqttSettings.PublishFeed.tx.rawValue)
                 MqttManager.sharedInstance.publish(message as String, topic: topic, qos: qos)
             }
         }
         
         // Send to uart
-        if (!wasReceivedFromMqtt || mqttSettings.subscribeBehaviour == .Transmit) {
-            let data = NSData(bytes: message.UTF8String, length: message.length)
+        if (!wasReceivedFromMqtt || mqttSettings.subscribeBehaviour == .transmit) {
+            let data = Data(bytes: UnsafePointer<UInt8>(message.utf8String!), count: message.length)
             delegate?.sendData(data)
         }
         
@@ -422,24 +422,24 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    @IBAction func echoSwitchValueChanged(sender:UISwitch) {
+    @IBAction func echoSwitchValueChanged(_ sender:UISwitch) {
         
-        let boo = sender.on
+        let boo = sender.isOn
         uartShouldEchoLocalSet(boo)
         echoLocal = boo
         
     }
     
     
-    func receiveData(newData : NSData){
+    func receiveData(_ newData : Data){
         
-        if (isViewLoaded() && view.window != nil) {
+        if (isViewLoaded && view.window != nil) {
             // MQTT publish to RX
             let mqttSettings = MqttSettings.sharedInstance
             if(mqttSettings.isPublishEnabled) {
-                if let message = NSString(data: newData, encoding: NSUTF8StringEncoding) {
-                    if let topic = mqttSettings.getPublishTopic(MqttSettings.PublishFeed.RX.rawValue) {
-                        let qos = mqttSettings.getPublishQos(MqttSettings.PublishFeed.RX.rawValue)
+                if let message = NSString(data: newData, encoding: String.Encoding.utf8.rawValue) {
+                    if let topic = mqttSettings.getPublishTopic(MqttSettings.PublishFeed.rx.rawValue) {
+                        let qos = mqttSettings.getPublishQos(MqttSettings.PublishFeed.rx.rawValue)
                         MqttManager.sharedInstance.publish(message as String, topic: topic, qos: qos)
                     }
                 }
@@ -452,22 +452,22 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func keyboardWillHide(sender : NSNotification) {
+    func keyboardWillHide(_ sender : Notification) {
         
-        if let keyboardSize = (sender.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.CGRectValue() {
+        if let keyboardSize = (sender.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             
             let yOffset:CGFloat = keyboardSize.height
             let oldRect:CGRect = msgInputView.frame
             msgInputYContraint?.constant += yOffset
             
             if IS_IPAD {
-                let newRect = CGRectMake(oldRect.origin.x, oldRect.origin.y + yOffset, oldRect.size.width, oldRect.size.height)
+                let newRect = CGRect(x: oldRect.origin.x, y: oldRect.origin.y + yOffset, width: oldRect.size.width, height: oldRect.size.height)
                 msgInputView.frame = newRect    //frame animates automatically
             }
          
             else {
                 
-                let newRect = CGRectMake(oldRect.origin.x, oldRect.origin.y + yOffset, oldRect.size.width, oldRect.size.height)
+                let newRect = CGRect(x: oldRect.origin.x, y: oldRect.origin.y + yOffset, width: oldRect.size.width, height: oldRect.size.height)
                 msgInputView.frame = newRect    //frame animates automatically
                 
             }
@@ -482,7 +482,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func keyboardWillShow(sender : NSNotification) {
+    func keyboardWillShow(_ sender : Notification) {
     
         //Raise input view when keyboard shows
     
@@ -491,7 +491,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
         }
     
         //calculate new position for input view
-        if let keyboardSize = (sender.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.CGRectValue() {
+        if let keyboardSize = (sender.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             
             let yOffset:CGFloat = keyboardSize.height
             let oldRect:CGRect = msgInputView.frame
@@ -499,7 +499,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             
 //            if (IS_IPAD){
             
-                let newRect = CGRectMake(oldRect.origin.x, oldRect.origin.y - yOffset, oldRect.size.width, oldRect.size.height)
+                let newRect = CGRect(x: oldRect.origin.x, y: oldRect.origin.y - yOffset, width: oldRect.size.width, height: oldRect.size.height)
                 self.msgInputView.frame = newRect   //frame animates automatically
 //            }
 //            
@@ -523,7 +523,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     
     //MARK: UITextViewDelegate methods
     
-    func textViewShouldBeginEditing(textView: UITextView) -> Bool {
+    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
         
         if textView === consoleView {
             //tapping on consoleview dismisses keyboard
@@ -545,7 +545,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     
     //MARK: UITextFieldDelegate methods
     
-    func textFieldShouldReturn(textField: UITextField) ->Bool {
+    func textFieldShouldReturn(_ textField: UITextField) ->Bool {
         
         //Keyboard's Done button was tapped
         
@@ -557,7 +557,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    @IBAction func consoleModeControlDidChange(sender : UISegmentedControl){
+    @IBAction func consoleModeControlDidChange(_ sender : UISegmentedControl){
         
         //Respond to console's ASCII/Hex control value changed
         
@@ -583,7 +583,7 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     }
     
     
-    func sendNotification(msgString:String) {
+    func sendNotification(_ msgString:String) {
         
         let note = UILocalNotification()
 //        note.fireDate = NSDate().dateByAddingTimeInterval(2.0)
@@ -591,8 +591,8 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
         note.alertBody = msgString
         note.soundName =  UILocalNotificationDefaultSoundName
         
-        dispatch_async(dispatch_get_main_queue(), { () -> Void in
-            UIApplication.sharedApplication().presentLocalNotificationNow(note)
+        DispatchQueue.main.async(execute: { () -> Void in
+            UIApplication.shared.presentLocalNotificationNow(note)
         })
         
         
@@ -609,17 +609,17 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             self.navigationController?.pushViewController(mqqtSettingsViewController, animated: true)
         }
         else if (IS_IPAD) {
-            mqttSettingsPopoverController?.dismissPopoverAnimated(true)
+            mqttSettingsPopoverController?.dismiss(animated: true)
             
             mqttSettingsPopoverController = UIPopoverController(contentViewController: mqqtSettingsViewController)
             mqttSettingsPopoverController?.delegate = self
-            mqqtSettingsViewController.view.backgroundColor = UIColor.darkGrayColor()
-            mqqtSettingsViewController.preferredContentSize = CGSizeMake(400, 0)
+            mqqtSettingsViewController.view.backgroundColor = UIColor.darkGray
+            mqqtSettingsViewController.preferredContentSize = CGSize(width: 400, height: 0)
             
             let aFrame:CGRect = mqttBarButtonItem!.customView!.frame
-            mqttSettingsPopoverController?.presentPopoverFromRect(aFrame,
-                inView: mqttBarButtonItem!.customView!.superview!,
-                permittedArrowDirections: UIPopoverArrowDirection.Any,
+            mqttSettingsPopoverController?.present(from: aFrame,
+                in: mqttBarButtonItem!.customView!.superview!,
+                permittedArrowDirections: UIPopoverArrowDirection.any,
                 animated: true)
         }
             }
@@ -630,24 +630,24 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
             let tintColor = self.view.tintColor
             
             switch (status) {
-            case .Connecting:
+            case .connecting:
                 let imageFrames = [
-                    UIImage(named:"mqtt_connecting1")!.tintWithColor(tintColor),
-                    UIImage(named:"mqtt_connecting2")!.tintWithColor(tintColor),
-                    UIImage(named:"mqtt_connecting3")!.tintWithColor(tintColor)
+                    UIImage(named:"mqtt_connecting1")!.tintWithColor(tintColor!),
+                    UIImage(named:"mqtt_connecting2")!.tintWithColor(tintColor!),
+                    UIImage(named:"mqtt_connecting3")!.tintWithColor(tintColor!)
                 ]
                 imageView.animationImages = imageFrames
                 imageView.animationDuration = 0.5 * Double(imageFrames.count)
                 imageView.animationRepeatCount = 0;
                 imageView.startAnimating()
                 
-            case .Connected:
+            case .connected:
                 imageView.stopAnimating()
-                imageView.image = UIImage(named:"mqtt_connected")!.tintWithColor(tintColor)
+                imageView.image = UIImage(named:"mqtt_connected")!.tintWithColor(tintColor!)
                 
             default:
                 imageView.stopAnimating()
-                imageView.image = UIImage(named:"mqtt_disconnected")!.tintWithColor(tintColor)
+                imageView.image = UIImage(named:"mqtt_disconnected")!.tintWithColor(tintColor!)
             }
         }
     }
@@ -655,32 +655,32 @@ class UARTViewController: UIViewController, UITextFieldDelegate, UITextViewDeleg
     // MARK: MqttManagerDelegate
     
     func onMqttConnected() {
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
+        DispatchQueue.main.async(execute: { [unowned self] in
             self.updateMqttStatus()
             })
     }
     
     func onMqttDisconnected() {
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
+        DispatchQueue.main.async(execute: { [unowned self] in
             self.updateMqttStatus()
             })
     }
     
-    func onMqttMessageReceived(message : String, topic: String) {
-        dispatch_async(dispatch_get_main_queue(), { [unowned self] in
+    func onMqttMessageReceived(_ message : String, topic: String) {
+        DispatchQueue.main.async(execute: { [unowned self] in
             self.sendUartMessage((message as NSString), wasReceivedFromMqtt: true)
             })
     }
     
-    func onMqttError(message : String) {
-        let alert = UIAlertController(title:"Error", message: message, preferredStyle: UIAlertControllerStyle.Alert)
-        alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil))
-        self.presentViewController(alert, animated: true, completion: nil)
+    func onMqttError(_ message : String) {
+        let alert = UIAlertController(title:"Error", message: message, preferredStyle: UIAlertControllerStyle.alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: UIAlertActionStyle.default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
     
     // MARK: UIPopoverControllerDelegate
     
-    func popoverControllerDidDismissPopover(popoverController: UIPopoverController) {
+    func popoverControllerDidDismissPopover(_ popoverController: UIPopoverController) {
         // MQTT
         MqttManager.sharedInstance.delegate = self
         updateMqttStatus()

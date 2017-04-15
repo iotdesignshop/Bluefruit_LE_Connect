@@ -12,7 +12,7 @@ import UIKit
 
 @objc protocol HelpViewControllerDelegate : Any{
     
-    func helpViewControllerDidFinish(controller : HelpViewController)
+    func helpViewControllerDidFinish(_ controller : HelpViewController)
     
 }
 
@@ -35,11 +35,11 @@ class HelpViewController : UIViewController {
 //    }
     
     
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: NSBundle?) {
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        preferredContentSize = CGSizeMake(320.0, 480.0)   //popover size on iPad
+        preferredContentSize = CGSize(width: 320.0, height: 480.0)   //popover size on iPad
         
     }
     
@@ -53,11 +53,11 @@ class HelpViewController : UIViewController {
         }
         
         else if (IS_IPHONE == true) {
-            self.modalTransitionStyle = UIModalTransitionStyle.FlipHorizontal
+            self.modalTransitionStyle = UIModalTransitionStyle.flipHorizontal
         }
         
         //Set the app version # in the Help/Info view
-        let versionString: String = "v" + ((NSBundle.mainBundle().infoDictionary)?["CFBundleShortVersionString"] as! String!)
+        let versionString: String = "v" + ((Bundle.main.infoDictionary)?["CFBundleShortVersionString"] as! String!)
         
         //        let bundleVersionString: String =  "b" + ((NSBundle.mainBundle().infoDictionary)?["CFBundleVersion"] as String!)  // Build number
 //        versionLabel?.text =  versionString + " " + bundleVersionString
@@ -67,7 +67,7 @@ class HelpViewController : UIViewController {
     }
     
     
-    override func viewDidAppear(animated : Bool){
+    override func viewDidAppear(_ animated : Bool){
         super.viewDidAppear(animated)
         
         textView?.flashScrollIndicators()  //indicate add'l content below screen
@@ -76,7 +76,7 @@ class HelpViewController : UIViewController {
     }
     
     
-    @IBAction func done(sender : AnyObject) {
+    @IBAction func done(_ sender : AnyObject) {
         
         delegate?.helpViewControllerDidFinish(self)
         

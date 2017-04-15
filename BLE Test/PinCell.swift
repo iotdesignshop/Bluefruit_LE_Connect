@@ -11,22 +11,22 @@ import UIKit
 
 protocol PinCellDelegate {
     
-    func cellModeUpdated(sender: AnyObject)
+    func cellModeUpdated(_ sender: AnyObject)
     
 }
 
 enum PinState:Int{
-    case Low = 0
-    case High
+    case low = 0
+    case high
 }
 
 enum PinMode:Int{
-    case Unknown = -1
-    case Input
-    case Output
-    case Analog
-    case PWM
-    case Servo
+    case unknown = -1
+    case input
+    case output
+    case analog
+    case pwm
+    case servo
 }
 
 class PinCell: UITableViewCell {
@@ -95,7 +95,7 @@ class PinCell: UITableViewCell {
     
     
     required init() {
-        super.init(style: UITableViewCellStyle.Default, reuseIdentifier: nil)
+        super.init(style: UITableViewCellStyle.default, reuseIdentifier: nil)
     }
     
     
@@ -116,11 +116,11 @@ class PinCell: UITableViewCell {
     }
     
     
-    func setDigitalValue(value:Int){
+    func setDigitalValue(_ value:Int){
         
         //Set a cell's digital Low/High value
         
-        if ((self.mode == PinMode.Input) || (self.mode == PinMode.Output)) {
+        if ((self.mode == PinMode.input) || (self.mode == PinMode.output)) {
             switch (value) {
             case 0:
                 self.valueLabel.text = "Low"
@@ -144,11 +144,11 @@ class PinCell: UITableViewCell {
     }
     
     
-    func setAnalogValue(value:Int){
+    func setAnalogValue(_ value:Int){
         
         //Set a cell's analog value
         
-        if (self.mode == PinMode.Analog){
+        if (self.mode == PinMode.analog){
             
             self.valueLabel.text = "\(value)";
             
@@ -162,11 +162,11 @@ class PinCell: UITableViewCell {
     }
     
     
-    func setPwmValue(value:Int){
+    func setPwmValue(_ value:Int){
         
         //Set a cell's PWM value
         
-        if (self.mode == PinMode.PWM){
+        if (self.mode == PinMode.pwm){
             
             self.valueLabel.text = "\(value)"
             
@@ -181,36 +181,36 @@ class PinCell: UITableViewCell {
     }
     
     
-    func respondToNewMode(newValue:PinMode){
+    func respondToNewMode(_ newValue:PinMode){
         
         //Set default display values & controls
         
         switch (newValue) {
-        case PinMode.Input:
+        case PinMode.input:
             self.modeLabel.text = "Input"
             self.valueLabel.text = "Low"
             hideDigitalControl(true)
             hideValueSlider(true)
             break;
-        case PinMode.Output:
+        case PinMode.output:
             self.modeLabel.text = "Output"
             self.valueLabel.text = "Low"
             hideDigitalControl(false)
             hideValueSlider(true)
             break;
-        case PinMode.Analog:
+        case PinMode.analog:
             self.modeLabel.text = "Analog"
             self.valueLabel.text = "0"
             hideDigitalControl(true)
             hideValueSlider(true)
             break;
-        case PinMode.PWM:
+        case PinMode.pwm:
             self.modeLabel.text = "PWM"
             self.valueLabel.text = "0"
             hideDigitalControl(true)
             hideValueSlider(false)
             break;
-        case PinMode.Servo:
+        case PinMode.servo:
             self.modeLabel.text = "Servo"
             self.valueLabel.text = "0"
             hideDigitalControl(true)
@@ -226,9 +226,9 @@ class PinCell: UITableViewCell {
     }
     
     
-    func hideDigitalControl(hide:Bool){
+    func hideDigitalControl(_ hide:Bool){
         
-        self.digitalControl.hidden = hide
+        self.digitalControl.isHidden = hide
         
         if (hide){
             self.digitalControl.selectedSegmentIndex = 0
@@ -236,9 +236,9 @@ class PinCell: UITableViewCell {
     }
     
     
-    func hideValueSlider(hide:Bool){
+    func hideValueSlider(_ hide:Bool){
     
-        self.valueSlider.hidden = hide
+        self.valueSlider.isHidden = hide
         
         if (hide) {
             self.valueSlider.value = 0.0
@@ -247,27 +247,27 @@ class PinCell: UITableViewCell {
     }
     
     
-    func setMode(modeInt:UInt8) {
+    func setMode(_ modeInt:UInt8) {
         
         switch modeInt {
         case 0:
-            self.mode = PinMode.Input
+            self.mode = PinMode.input
         case 1:
-            self.mode = PinMode.Output
+            self.mode = PinMode.output
         case 2:
-            self.mode = PinMode.Analog
+            self.mode = PinMode.analog
         case 3:
-            self.mode = PinMode.PWM
+            self.mode = PinMode.pwm
         case 4:
-            self.mode = PinMode.Servo
+            self.mode = PinMode.servo
         default:
-            printLog(self, funcName: (__FUNCTION__), logString: "Attempting to set pin mode w non-matching int")
+            printLog(self, funcName: (#function), logString: "Attempting to set pin mode w non-matching int")
         }
         
     }
     
     
-    func setDefaultsWithMode(aMode:PinMode){
+    func setDefaultsWithMode(_ aMode:PinMode){
     
         //load initial default values
     
@@ -275,7 +275,7 @@ class PinCell: UITableViewCell {
     
         mode = aMode
     
-        digitalControl.selectedSegmentIndex = PinState.Low.rawValue
+        digitalControl.selectedSegmentIndex = PinState.low.rawValue
     
         valueSlider.setValue(0.0, animated: false)
     
@@ -289,24 +289,24 @@ class PinCell: UITableViewCell {
         modeControl.removeAllSegments()
         
         if isDigital == true {
-            modeControl.insertSegmentWithTitle("Input", atIndex: 0, animated: false)
-            modeControl.insertSegmentWithTitle("Output", atIndex: 1, animated: false)
+            modeControl.insertSegment(withTitle: "Input", at: 0, animated: false)
+            modeControl.insertSegment(withTitle: "Output", at: 1, animated: false)
         }
         
         if isAnalog == true {
-            modeControl.insertSegmentWithTitle("Analog", atIndex: modeControl.numberOfSegments, animated: false)
+            modeControl.insertSegment(withTitle: "Analog", at: modeControl.numberOfSegments, animated: false)
         }
         
         if isPWM == true {
-            modeControl.insertSegmentWithTitle("PWM", atIndex: modeControl.numberOfSegments, animated: false)
+            modeControl.insertSegment(withTitle: "PWM", at: modeControl.numberOfSegments, animated: false)
         }
         
         if isServo == true {
-            modeControl.insertSegmentWithTitle("Servo", atIndex: modeControl.numberOfSegments, animated: false)
+            modeControl.insertSegment(withTitle: "Servo", at: modeControl.numberOfSegments, animated: false)
         }
         
         //    //Default to Output selected
-        modeControl.selectedSegmentIndex = PinMode.Input.rawValue
+        modeControl.selectedSegmentIndex = PinMode.input.rawValue
     }
     
 }

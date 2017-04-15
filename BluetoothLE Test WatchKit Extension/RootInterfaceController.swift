@@ -12,7 +12,7 @@ import WatchConnectivity
 
 class RootInterfaceController: BLEInterfaceController, WCSessionDelegate {
     
-    private var checkConnectionTimer:NSTimer?
+    private var checkConnectionTimer:Timer?
     
 //    static let sharedInstance = RootInterfaceController()
     
@@ -26,9 +26,9 @@ class RootInterfaceController: BLEInterfaceController, WCSessionDelegate {
         super.willActivate()
         
         checkConnection()
-        checkConnectionTimer = NSTimer(timeInterval: 5.0, target: self, selector: Selector("checkConnection"), userInfo: nil, repeats: true)
+        checkConnectionTimer = Timer(timeInterval: 5.0, target: self, selector: #selector(RootInterfaceController.checkConnection), userInfo: nil, repeats: true)
         checkConnectionTimer!.tolerance = 2.0
-        NSRunLoop.currentRunLoop().addTimer(checkConnectionTimer!, forMode: NSDefaultRunLoopMode)
+        RunLoop.current.add(checkConnectionTimer!, forMode: RunLoopMode.defaultRunLoopMode)
         
     }
 
@@ -44,7 +44,12 @@ class RootInterfaceController: BLEInterfaceController, WCSessionDelegate {
     
     func checkConnection(){
         
-        sendRequest(["type":"isConnected"])
+        sendRequest(message: ["type":"isConnected" as AnyObject])
+        
+    }
+    
+    @available(watchOSApplicationExtension 2.2, *)
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         
     }
     
@@ -55,8 +60,8 @@ class RootInterfaceController: BLEInterfaceController, WCSessionDelegate {
 class ControlPadInterfaceController: BLEInterfaceController {
     
     
-    override func awakeWithContext(context: AnyObject?) {
-        super.awakeWithContext(context)
+    override func awake(withContext: Any?) {
+        super.awake(withContext: withContext)
         
         // Configure interface objects here.
         
@@ -80,7 +85,7 @@ class ControlPadInterfaceController: BLEInterfaceController {
         
         //send button vals as dictionary
         let request = ["type":"sendData", "button":button] as [String:AnyObject]
-        sendRequest(request)
+        sendRequest(message: request)
 //        WKInterfaceController.openParentApplication(request,
 //            reply: { (replyInfo, error) -> Void in
 //                // TODO: process reply data
@@ -91,42 +96,42 @@ class ControlPadInterfaceController: BLEInterfaceController {
     
     
     @IBAction func rightButtonTapped() {
-        buttonTapped(8)
+        buttonTapped(button: 8)
     }
     
     
     @IBAction func leftButtonTapped() {
-        buttonTapped(7)
+        buttonTapped(button: 7)
     }
     
     
     @IBAction func downButtonTapped() {
-        buttonTapped(6)
+        buttonTapped(button: 6)
     }
     
     
     @IBAction func upButtonTapped() {
-        buttonTapped(5)
+        buttonTapped(button: 5)
     }
     
     
     @IBAction func oneButtonTapped() {
-        buttonTapped(1)
+        buttonTapped(button: 1)
     }
     
     
     @IBAction func twoButtonTapped() {
-        buttonTapped(2)
+        buttonTapped(button: 2)
     }
     
     
     @IBAction func threeButtonTapped() {
-        buttonTapped(3)
+        buttonTapped(button: 3)
     }
     
     
     @IBAction func fourButtonTapped() {
-        buttonTapped(4)
+        buttonTapped(button: 4)
     }
 }
 
@@ -142,7 +147,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
     var gVal:UInt8 = 0
     var bVal:UInt8 = 0
     
-    var swatchColor = UIColor.grayColor()
+    var swatchColor = UIColor.gray
     var buttonColors:[UIColor] = [
         UIColor(red:0.969, green:0.400, blue:0.427, alpha:1.000),
         UIColor(red:0.992, green:0.694, blue:0.427, alpha:1.000),
@@ -182,8 +187,8 @@ class ColorPickerInterfaceController: BLEInterfaceController {
     ]
     
     
-    override func awakeWithContext(context: AnyObject?) {
-        super.awakeWithContext(context)
+    override func awake(withContext: Any?) {
+        super.awake(withContext: withContext)
         
         // Configure interface objects here.
         
@@ -242,7 +247,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
                         "blue":blueInt,
                         "green":greenInt] as [String:AnyObject]
         
-        sendRequest(request)
+        sendRequest(message: request)
         
     }
     
@@ -253,7 +258,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
         
         let color = buttonColors[index]
         
-        sendColor(color)
+        sendColor(color: color)
     }
     
     
@@ -267,7 +272,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
         swatchColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         
         let newColor = UIColor(red: CGFloat(value), green: green, blue: blue, alpha: 1.0)
-        setRGBColor(newColor)
+        setRGBColor(newColor: newColor)
         
     }
     
@@ -282,7 +287,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
         swatchColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         
         let newColor = UIColor(red: red, green: CGFloat(value), blue: blue, alpha: 1.0)
-        setRGBColor(newColor)
+        setRGBColor(newColor: newColor)
         
     }
     
@@ -297,7 +302,7 @@ class ColorPickerInterfaceController: BLEInterfaceController {
         swatchColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         
         let newColor = UIColor(red: red, green: green, blue: CGFloat(value), alpha: 1.0)
-        setRGBColor(newColor)
+        setRGBColor(newColor: newColor)
         
     }
     
@@ -305,143 +310,143 @@ class ColorPickerInterfaceController: BLEInterfaceController {
     @IBAction func sendButtonTapped() {
         
         //send color vals as dictionary
-        sendColor(swatchColor)
+        sendColor(color: swatchColor)
         
     }
     
     
     @IBAction func color0Tapped() {
-        colorTapped(0)
+        colorTapped(index: 0)
     }
     
     
     @IBAction func color1Tapped() {
-        colorTapped(1)
+        colorTapped(index: 1)
     }
     
     
     @IBAction func color2Tapped() {
-        colorTapped(2)
+        colorTapped(index: 2)
     }
     
     
     @IBAction func color3Tapped() {
-        colorTapped(3)
+        colorTapped(index: 3)
     }
     
     
     @IBAction func color4Tapped() {
-        colorTapped(4)
+        colorTapped(index: 4)
     }
     
     
     @IBAction func color5Tapped() {
-        colorTapped(5)
+        colorTapped(index: 5)
     }
     
     
     @IBAction func color6Tapped() {
-        colorTapped(6)
+        colorTapped(index: 6)
     }
     
     
     @IBAction func color7Tapped() {
-        colorTapped(7)
+        colorTapped(index: 7)
     }
     
     
     @IBAction func color8Tapped() {
-        colorTapped(8)
+        colorTapped(index: 8)
     }
     
     
     @IBAction func color9Tapped() {
-        colorTapped(9)
+        colorTapped(index: 9)
     }
     
     
     @IBAction func color10Tapped() {
-        colorTapped(10)
+        colorTapped(index: 10)
     }
     
     
     @IBAction func color11Tapped() {
-        colorTapped(11)
+        colorTapped(index: 11)
     }
     
     
     @IBAction func color12Tapped() {
-        colorTapped(12)
+        colorTapped(index: 12)
     }
     
     
     @IBAction func color13Tapped() {
-        colorTapped(13)
+        colorTapped(index: 13)
     }
     
     
     @IBAction func color14Tapped() {
-        colorTapped(14)
+        colorTapped(index: 14)
     }
     
     
     @IBAction func color15Tapped() {
-        colorTapped(15)
+        colorTapped(index: 15)
     }
     
     
     @IBAction func color16Tapped() {
-        colorTapped(16)
+        colorTapped(index: 16)
     }
     
     
     @IBAction func color17Tapped() {
-        colorTapped(17)
+        colorTapped(index: 17)
     }
     
     
     @IBAction func color18Tapped() {
-        colorTapped(18)
+        colorTapped(index: 18)
     }
     
     
     @IBAction func color19Tapped() {
-        colorTapped(19)
+        colorTapped(index: 19)
     }
     
     
     @IBAction func color20Tapped() {
-        colorTapped(20)
+        colorTapped(index: 20)
     }
     
     
     @IBAction func color21Tapped() {
-        colorTapped(21)
+        colorTapped(index: 21)
     }
     
     
     @IBAction func color22Tapped() {
-        colorTapped(22)
+        colorTapped(index: 22)
     }
     
     
     @IBAction func color23Tapped() {
-        colorTapped(23)
+        colorTapped(index: 23)
     }
     
     
     @IBAction func color24Tapped() {
-        colorTapped(24)
+        colorTapped(index: 24)
     }
     
     
     @IBAction func color25Tapped() {
-        colorTapped(25)
+        colorTapped(index: 25)
     }
     
     
     @IBAction func color26Tapped() {
-        colorTapped(26)
+        colorTapped(index: 26)
     }
 
 

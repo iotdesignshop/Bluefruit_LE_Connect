@@ -17,13 +17,13 @@ class BLEDevice {
     var peripheral: CBPeripheral!
     var isUART:Bool = false
 //    var isDFU:Bool = false
-    private var advertisementData: [NSObject : AnyObject]
+    fileprivate var advertisementData: [AnyHashable: Any]
     var RSSI:NSNumber {
         didSet {
             self.deviceCell?.updateSignalImage(RSSI)
         }
     }
-    private let nilString = "nil"
+    fileprivate let nilString = "nil"
     var connectableBool:Bool {
         let num = advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber
         if num != nil {
@@ -38,9 +38,9 @@ class BLEDevice {
     var deviceCell:DeviceCell? {
         didSet {
             deviceCell?.nameLabel.text = self.name
-            deviceCell?.connectButton.hidden = !(self.connectableBool)
+            deviceCell?.connectButton.isHidden = !(self.connectableBool)
             deviceCell?.updateSignalImage(RSSI)
-            deviceCell?.uartCapableLabel.hidden = !self.isUART
+            deviceCell?.uartCapableLabel.isHidden = !self.isUART
         }
     }
     
@@ -53,7 +53,7 @@ class BLEDevice {
     }
     
     var manufacturerData:String {
-        let newData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? NSData
+        let newData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
             if newData == nil {
                 return nilString
             }
@@ -106,7 +106,7 @@ class BLEDevice {
         
         //Enable connect button according to connectable value
         if self.deviceCell?.connectButton != nil {
-            deviceCell?.connectButton.enabled = verdict
+            deviceCell?.connectButton.isEnabled = verdict
         }
             
             return verdict.description
@@ -126,7 +126,7 @@ class BLEDevice {
         return RSSI.stringValue
     }
     
-    var identifier:NSUUID? {
+    var identifier:UUID? {
         if self.peripheral == nil {
             printLog(self, funcName: "identifier", logString: "attempting to retrieve peripheral ID before peripheral set")
             return nil
@@ -137,7 +137,7 @@ class BLEDevice {
     }
     
     var UUIDString:String {
-        let str = self.identifier?.UUIDString
+        let str = self.identifier?.uuidString
         if str != nil {
             return str!
         }
@@ -149,7 +149,7 @@ class BLEDevice {
     var advertisementArray:[[String]] = []
     
 
-    init(peripheral:CBPeripheral!, advertisementData:[NSObject : AnyObject]!, RSSI:NSNumber!) {
+    init(peripheral:CBPeripheral!, advertisementData:[AnyHashable: Any]!, RSSI:NSNumber!) {
         
         self.peripheral = peripheral
         self.advertisementData = advertisementData
@@ -217,13 +217,13 @@ class BLEDevice {
     }
     
     
-    func stringsFromUUIDs(idArray:NSArray)->[String] {
+    func stringsFromUUIDs(_ idArray:NSArray)->[String] {
         
-        var idStringArray = [String](count: idArray.count, repeatedValue: "")
+        var idStringArray = [String](repeating: "", count: idArray.count)
         
-        idArray.enumerateObjectsUsingBlock({ (obj:AnyObject!, idx:Int, stop:UnsafeMutablePointer<ObjCBool>) -> Void in
+        idArray.enumerateObjects({ (obj:AnyObject!, idx:Int, stop:UnsafeMutablePointer<ObjCBool>) -> Void in
             let objUUID = obj as? CBUUID
-            let idStr = objUUID!.UUIDString
+            let idStr = objUUID!.uuidString
             idStringArray[idx] = idStr
         })
         return idStringArray
